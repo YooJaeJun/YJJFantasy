@@ -45,4 +45,6 @@ private:
 	int32 Failed = 0;
 	float TrackMaxZ = 0.f;
 	float TrackStartZ = 0.f;
+	int32 FrameCount = 0;
+	float FrameTime = 0.f;
 };

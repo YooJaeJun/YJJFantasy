@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Gameplay/YJJChest.h"
 #include "Gameplay/YJJLantern.h"
 #include "Gameplay/YJJShrine.h"
 #include "Gameplay/YJJSlime.h"
@@ -307,6 +308,34 @@ void UYJJAutoPilot::StartAutoPlay()
 		Shot(TEXT("Play_3_Combat"));
 	});
 
+	// 보물 상자: 각 상자 앞에서 열기
+	for (int32 i = 0; i < 6; ++i)
+	{
+		Add(0.2f, [this, i] {
+			int32 Index = 0;
+			for (TActorIterator<AYJJChest> It(GetWorld()); It; ++It)
+			{
+				if (Index++ == i)
+				{
+					View(It->GetActorLocation() + It->GetActorForwardVector() * 170.f + FVector(0, 0, 110), It->GetActorRotation().Yaw + 180.f, -10.f);
+					break;
+				}
+			}
+		});
+		Add(1.5f, [this, i] {
+			if (AYJJHero* H = Hero())
+			{
+				Check(!H->GetInteractPrompt().IsEmpty(), FString::Printf(TEXT("chest %d prompt '%s'"), i, *H->GetInteractPrompt()));
+				H->DoInteract();
+			}
+		});
+		Add(1.2f, [this, i] { if (i == 0) { Shot(TEXT("Play_3b_Chest")); } });
+	}
+	Add(0.1f, [this] {
+		const UYJJAdventureSubsystem* Adv = UYJJAdventureSubsystem::Get(GetWorld());
+		Check(Adv && Adv->GetChestsOpened() == Adv->GetChestTotal() && Adv->GetChestTotal() == 6, FString::Printf(TEXT("chests opened %d/%d"), Adv ? Adv->GetChestsOpened() : -1, Adv ? Adv->GetChestTotal() : -1));
+	});
+
 	// 등불: 각 등불 앞에서 상호작용
 	for (int32 i = 0; i < 5; ++i)
 	{
@@ -360,12 +389,18 @@ void UYJJAutoPilot::StartAutoPlay()
 			Check(H->GetActorLocation().Z > AYJJWorldBuilder::BaseZ - 1000.f, FString::Printf(TEXT("fall respawn (z=%.0f)"), H->GetActorLocation().Z - AYJJWorldBuilder::BaseZ));
 		}
 	});
-	Add(0.1f, [this] { UE_LOG(LogYJJFantasy, Display, TEXT("[AutoPilot] result passed=%d failed=%d"), Passed, Failed); });
+	Add(0.1f, [this] { UE_LOG(LogYJJFantasy, Display, TEXT("[AutoPilot] result passed=%d failed=%d avgfps=%.0f"), Passed, Failed, FrameCount / FMath::Max(FrameTime, 0.001f)); });
 	UE_LOG(LogYJJFantasy, Display, TEXT("[AutoPilot] autoplay start (%d steps)"), Steps.Num());
 }
 
 void UYJJAutoPilot::Tick(float DeltaTime)
 {
+	// 평균 프레임 (처음 몇 초의 셰이더 컴파일 구간은 뺀다)
+	if (StepIndex > 2)
+	{
+		FrameCount++;
+		FrameTime += DeltaTime;
+	}
 	if (StepIndex >= Steps.Num() || Steps.Num() == 0)
 	{
 		return;

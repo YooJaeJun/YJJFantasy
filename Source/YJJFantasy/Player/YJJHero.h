@@ -109,6 +109,7 @@ private:
 	void UpdateRespawn(float DeltaTime);
 	void UpdateFinale(float DeltaTime);
 	bool IsInUpdraft() const;
+	AActor* FindInteractable(FString* OutPrompt) const;
 	void Respawn();
 	bool CanAct() const;
 

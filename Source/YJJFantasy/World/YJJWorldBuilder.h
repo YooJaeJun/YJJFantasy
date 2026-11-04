@@ -83,6 +83,7 @@ private:
 	void AddWaterfall(const FVector& Top, float Yaw, float Width, float Drop);
 	AYJJProp* AddStone(const FVector& Top, float Radius, const FLinearColor& Grass, const FLinearColor& Rock, int32 Seed);
 	void AddStardust(const FVector& Location);
+	void AddChest(const FVector& Location, float Yaw);
 	void AddStardustLine(const FVector& From, const FVector& To, int32 Count, float Arc = 0.f);
 	void AddStardustRing(const FVector& Center, float Radius, int32 Count);
 

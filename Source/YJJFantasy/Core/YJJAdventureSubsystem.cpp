@@ -153,6 +153,13 @@ void UYJJAdventureSubsystem::OnStardustCollected()
 	}
 }
 
+void UYJJAdventureSubsystem::OnChestOpened()
+{
+	ChestsOpened++;
+	UE_LOG(LogYJJFantasy, Display, TEXT("[Adventure] chest %d/%d"), ChestsOpened, ChestTotal);
+	Toast(FString::Printf(TEXT("보물 상자를 찾았다!  (%d/%d)"), ChestsOpened, ChestTotal), FLinearColor(1.f, 0.8f, 0.4f), 3.5f);
+}
+
 void UYJJAdventureSubsystem::SetCheckpoint(const FVector& Location, float Yaw)
 {
 	Checkpoint = Location;

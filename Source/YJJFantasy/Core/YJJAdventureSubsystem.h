@@ -48,6 +48,8 @@ public:
 	void RegisterLantern(AYJJLantern* Lantern);
 	void RegisterShrine(AYJJShrine* Shrine);
 	void RegisterStardust() { StardustTotal++; }
+	void RegisterChest(int32 StardustInside) { ChestTotal++; StardustTotal += StardustInside; }
+	void OnChestOpened();
 	void AddZone(const FYJJZone& Zone) { Zones.Add(Zone); }
 
 	// ---- 진행
@@ -64,6 +66,8 @@ public:
 	int32 GetLanternCount() const { return Lanterns.Num(); }
 	int32 GetStardust() const { return Stardust; }
 	int32 GetStardustTotal() const { return StardustTotal; }
+	int32 GetChestsOpened() const { return ChestsOpened; }
+	int32 GetChestTotal() const { return ChestTotal; }
 	EYJJPhase GetPhase() const { return Phase; }
 	float GetPlayTime() const { return PlayTime; }
 	float GetPhaseTime() const { return PhaseTime; }
@@ -106,6 +110,8 @@ private:
 
 	int32 Stardust = 0;
 	int32 StardustTotal = 0;
+	int32 ChestsOpened = 0;
+	int32 ChestTotal = 0;
 	FVector Checkpoint = FVector::ZeroVector;
 	float CheckpointYaw = 0.f;
 	EYJJPhase Phase = EYJJPhase::Explore;

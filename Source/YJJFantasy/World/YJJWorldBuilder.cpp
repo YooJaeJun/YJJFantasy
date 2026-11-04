@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
+#include "Gameplay/YJJChest.h"
 #include "Gameplay/YJJLantern.h"
 #include "Gameplay/YJJShrine.h"
 #include "Gameplay/YJJSlime.h"
@@ -466,6 +467,13 @@ void AYJJWorldBuilder::AddStardust(const FVector& Location)
 	GetWorld()->SpawnActor<AYJJStardust>(AYJJStardust::StaticClass(), FTransform(Location), Params);
 }
 
+void AYJJWorldBuilder::AddChest(const FVector& Location, float Yaw)
+{
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	GetWorld()->SpawnActor<AYJJChest>(AYJJChest::StaticClass(), FTransform(FRotator(0, Yaw, 0), Location), Params);
+}
+
 void AYJJWorldBuilder::AddStardustLine(const FVector& From, const FVector& To, int32 Count, float Arc)
 {
 	for (int32 i = 0; i < Count; ++i)
@@ -610,6 +618,9 @@ void AYJJWorldBuilder::BuildHub()
 	// 성소 둘레 별가루
 	AddStardustRing(W(0, 0, 230), 1250.f, 8);
 
+	// 보물: 남서쪽 바위 뒤 가장자리
+	AddChest(OnGround(W(-2400, -1150, 0)), 30.f);
+
 	AddZone(TEXT("바람의 성소"), TEXT("빛을 잃은 하늘의 심장"), C, 2900.f);
 }
 
@@ -653,6 +664,9 @@ void AYJJWorldBuilder::BuildMeadow()
 	Finish(Draft);
 	AddStardustLine(C + FVector(500, -1650, 1500), C + FVector(500, -1650, 4500), 4);
 	AddStardustLine(C + FVector(900, -2400, 4700), W(9300, -3300, 4300), 5);
+
+	// 보물: 분홍 나무 꼭대기 (버섯을 밟고 활공해서)
+	AddChest(OnGround(C + FVector(-1174, 900, 0)), -60.f);
 
 	AddZone(TEXT("들꽃 언덕"), TEXT("바람이 꽃잎을 나르는 곳"), C, 2100.f);
 }
@@ -703,6 +717,10 @@ void AYJJWorldBuilder::BuildCrystal()
 	// 섬 아래쪽에 숨은 별가루 (활공으로 한 바퀴)
 	AddStardustRing(C + FVector(0, 0, -900), 2100.f, 6);
 
+	// 보물: 북쪽 끝 너머 떠 있는 작은 바위 (섬 끝에서 활공)
+	AddStone(W(-2600, 10100, 1150), 260.f, GrassCrystal, RockCool, 77);
+	AddChest(W(-2600, 10100, 1150), 180.f);
+
 	AddZone(TEXT("수정섬"), TEXT("잠든 별빛이 자라는 섬"), C, 1900.f);
 }
 
@@ -751,6 +769,9 @@ void AYJJWorldBuilder::BuildWaterfall()
 	// 폭포를 따라 내려가는 별가루
 	AddStardustLine(C + FVector(2300, 450, -300), C + FVector(2300, 450, -2600), 5);
 	AddStardustLine(C + FVector(-500, 700, 300), C + FVector(-850, -500, 600), 4);
+
+	// 보물: 둘째 단 대지 끝 (등불과 떨어진 곳)
+	AddChest(OnGround(C + FVector(-200, 0, 0)), 219.f);
 
 	AddZone(TEXT("폭포 정원"), TEXT("하늘 아래로 흐르는 강"), C, 2200.f);
 }
@@ -844,6 +865,9 @@ void AYJJWorldBuilder::BuildForest()
 	Finish(Draft);
 	AddStardustLine(C + FVector(1900, 900, 1500), C + FVector(1900, 900, 6000), 5);
 
+	// 보물: 고목 꼭대기 가지 위
+	AddChest(C + FVector(-380, 380, 2650), -45.f);
+
 	AddZone(TEXT("고목의 숲"), TEXT("천 년을 자란 나무의 그늘"), C, 2400.f);
 }
 
@@ -902,6 +926,9 @@ void AYJJWorldBuilder::BuildRuins()
 	}
 	// 탑 둘레를 도는 별가루
 	AddStardustRing(C + FVector(0, 0, TopZ + 700.f), 900.f, 6);
+
+	// 보물: 탑 뒤 그늘
+	AddChest(OnGround(C + FVector(750, 850, 0)), 200.f);
 
 	AddZone(TEXT("하늘 유적"), TEXT("바람을 섬기던 옛 신전"), C, 2000.f);
 }

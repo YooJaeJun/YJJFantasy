@@ -238,6 +238,15 @@ void AYJJHUD::DrawObjective(const AYJJHero& Hero, const UYJJAdventureSubsystem& 
 	Circle(X + S(28.f), DY, S(10.f), FLinearColor(1.f, 0.85f, 0.45f, 0.35f));
 	Diamond(X + S(28.f), DY, S(8.f), FLinearColor(1.f, 0.95f, 0.75f, 1.f));
 	Text(Dust, X + S(48.f), DY, 22.f, FLinearColor(1.f, 0.92f, 0.7f, 1.f));
+
+	// 보물 상자
+	if (Adv.GetChestTotal() > 0)
+	{
+		const float CY = DY + S(34.f);
+		Panel(X + S(18.f), CY - S(9.f), S(20.f), S(18.f), FLinearColor(0.85f, 0.55f, 0.25f, 1.f));
+		Panel(X + S(18.f), CY - S(10.f), S(20.f), S(6.f), FLinearColor(1.f, 0.8f, 0.35f, 1.f));
+		Text(FString::Printf(TEXT("%d / %d"), Adv.GetChestsOpened(), Adv.GetChestTotal()), X + S(48.f), CY, 22.f, FLinearColor(1.f, 0.85f, 0.6f, 1.f));
+	}
 }
 
 void AYJJHUD::DrawHearts(const AYJJHero& Hero)
@@ -469,7 +478,7 @@ void AYJJHUD::DrawEnding(const UYJJAdventureSubsystem& Adv)
 	Text(TEXT("하늘섬에 다시 바람이 분다"), CX, CY, 72.f, WithAlpha(Cream, A), EAlign::Center, 4.f, FLinearColor(0.35f, 0.2f, 0.12f, 0.9f));
 	const int32 Minutes = FMath::FloorToInt(Adv.GetPlayTime() / 60.f);
 	const int32 Seconds = FMath::FloorToInt(Adv.GetPlayTime()) % 60;
-	const FString Stats = FString::Printf(TEXT("모험 시간 %d분 %02d초      별가루 %d / %d"), Minutes, Seconds, Adv.GetStardust(), Adv.GetStardustTotal());
+	const FString Stats = FString::Printf(TEXT("모험 시간 %d분 %02d초      별가루 %d / %d      보물 상자 %d / %d"), Minutes, Seconds, Adv.GetStardust(), Adv.GetStardustTotal(), Adv.GetChestsOpened(), Adv.GetChestTotal());
 	Text(Stats, CX, CY + S(84.f), 28.f, WithAlpha(GoldText, A), EAlign::Center, 2.f);
 	Text(TEXT("플레이해 주셔서 고마워요"), CX, CY + S(134.f), 24.f, WithAlpha(FLinearColor(0.95f, 0.95f, 1.f, 1.f), A), EAlign::Center, 2.f);
 }
