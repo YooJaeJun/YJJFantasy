@@ -1,4 +1,4 @@
-#include "Player/YJJHero.h"
+﻿#include "Player/YJJHero.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -25,7 +25,7 @@
 
 namespace
 {
-	// 몸 색: 하얀 여행자 옷 + 청록 망토 + 금발
+	// 紐??? ?섏? ?ы뻾????+ 泥?줉 留앺넗 + 湲덈컻
 	const FLinearColor Skin(1.f, 0.82f, 0.7f);
 	const FLinearColor Cloth(0.95f, 0.93f, 0.88f);
 	const FLinearColor ClothShade(0.8f, 0.8f, 0.86f);
@@ -60,7 +60,7 @@ AYJJHero::AYJJHero()
 	PrimaryActorTick.bCanEverTick = true;
 	GetCapsuleComponent()->InitCapsuleSize(38.f, 96.f);
 
-	// 카메라 방향으로 몸을 돌리지 않고, 이동 방향으로 몸을 돌린다 (모험 게임 기본 조작감)
+	// 移대찓??諛⑺뼢?쇰줈 紐몄쓣 ?뚮━吏 ?딄퀬, ?대룞 諛⑺뼢?쇰줈 紐몄쓣 ?뚮┛??(紐⑦뿕 寃뚯엫 湲곕낯 議곗옉媛?
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
@@ -70,7 +70,7 @@ AYJJHero::AYJJHero()
 	MoveComp->RotationRate = FRotator(0.f, 720.f, 0.f);
 	MoveComp->MaxWalkSpeed = WalkSpeed;
 	MoveComp->MaxAcceleration = 3000.f;
-	MoveComp->JumpZVelocity = 820.f;
+	MoveComp->JumpZVelocity = 880.f;
 	MoveComp->AirControl = 0.55f;
 	MoveComp->GravityScale = 1.75f;
 	MoveComp->BrakingDecelerationWalking = 2600.f;
@@ -111,7 +111,7 @@ void AYJJHero::BeginPlay()
 	}
 }
 
-// ============================================================ 몸 조립
+// ============================================================ 紐?議곕┰
 
 void AYJJHero::BuildBody()
 {
@@ -125,10 +125,10 @@ void AYJJHero::BuildBody()
 	UMaterialInterface* EyeMat = YJJShapes::Solid(this, EyeColor, 0.3f, 0.2f);
 	UMaterialInterface* WhiteMat = YJJShapes::Solid(this, FLinearColor::White, 1.5f, 0.2f);
 
-	// 발바닥 = 캡슐 아래 (-96)
+	// 諛쒕컮??= 罹≪뒓 ?꾨옒 (-96)
 	Visual = MakePivot(this, RootComponent, FVector(0, 0, -96));
 
-	// 다리 (엉덩이 축에서 흔든다)
+	// ?ㅻ━ (?됰뜦??異뺤뿉???붾뱺??
 	for (int32 Side = -1; Side <= 1; Side += 2)
 	{
 		USceneComponent* Leg = MakePivot(this, Visual, FVector(0, Side * 13.f, 66.f));
@@ -138,7 +138,7 @@ void AYJJHero::BuildBody()
 	}
 
 	Torso = MakePivot(this, Visual, FVector(0, 0, 70));
-	// 튜닉 (아래가 퍼진 원뿔 + 몸통)
+	// ?쒕땳 (?꾨옒媛 ?쇱쭊 ?먮퓭 + 紐명넻)
 	YJJShapes::Add(this, Torso, EYJJShape::Cone, FVector(0, 0, 4), FVector(80, 72, 46), ClothMat, false);
 	YJJShapes::Add(this, Torso, EYJJShape::Cylinder, FVector(0, 0, 34), FVector(52, 44, 50), ClothMat, false);
 	YJJShapes::Add(this, Torso, EYJJShape::Cylinder, FVector(0, 0, -12), FVector(82, 74, 7), TrimMat, false);
@@ -146,7 +146,7 @@ void AYJJHero::BuildBody()
 	YJJShapes::Add(this, Torso, EYJJShape::Sphere, FVector(24, 0, 14), FVector(12, 16, 12), GoldMat, false);
 	YJJShapes::Add(this, Torso, EYJJShape::Cube, FVector(25, 0, 40), FVector(4, 18, 30), TrimMat, false);
 
-	// 목도리 + 휘날리는 꼬리
+	// 紐⑸룄由?+ ?섎궇由щ뒗 瑗щ━
 	YJJShapes::Add(this, Torso, EYJJShape::Cylinder, FVector(0, 0, 62), FVector(54, 50, 14), ScarfMat, false);
 	USceneComponent* Prev = MakePivot(this, Torso, FVector(-22, 8, 60));
 	for (int32 i = 0; i < 4; ++i)
@@ -156,7 +156,7 @@ void AYJJHero::BuildBody()
 		Prev = MakePivot(this, Prev, FVector(-28, 0, 0));
 	}
 
-	// 팔 (어깨 축)
+	// ??(?닿묠 異?
 	for (int32 Side = -1; Side <= 1; Side += 2)
 	{
 		USceneComponent* Arm = MakePivot(this, Torso, FVector(0, Side * 32.f, 54.f));
@@ -167,11 +167,11 @@ void AYJJHero::BuildBody()
 		(Side < 0 ? ArmL : ArmR) = Arm;
 	}
 
-	// 머리: 큰 머리 비율(애니메 SD 느낌)
+	// 癒몃━: ??癒몃━ 鍮꾩쑉(?좊땲硫?SD ?먮굦)
 	Head = MakePivot(this, Torso, FVector(0, 0, 70));
 	YJJShapes::Add(this, Head, EYJJShape::Cylinder, FVector(0, 0, 4), FVector(18, 18, 14), SkinMat, false);
 	YJJShapes::Add(this, Head, EYJJShape::Sphere, FVector(2, 0, 40), FVector(66, 62, 64), SkinMat, false);
-	// 머리카락: 뒤통수를 덮는 구 + 앞머리 원뿔 + 더듬이 머리
+	// 癒몃━移대씫: ?ㅽ넻?섎? ??뒗 援?+ ?욌㉧由??먮퓭 + ?붾벉??癒몃━
 	YJJShapes::Add(this, Head, EYJJShape::Sphere, FVector(-6, 0, 48), FVector(72, 70, 68), HairMat, false);
 	for (int32 i = -2; i <= 2; ++i)
 	{
@@ -182,7 +182,7 @@ void AYJJHero::BuildBody()
 		YJJShapes::Add(this, Head, EYJJShape::Cone, FVector(8, Side * 32.f, 34), FVector(18, 16, 46), HairMat, false, FRotator(180, 0, Side * -8.f));
 	}
 	YJJShapes::Add(this, Head, EYJJShape::Cone, FVector(4, 0, 86), FVector(10, 8, 34), HairMat, false, FRotator(-25, 0, 0));
-	// 포니테일
+	// ?щ땲?뚯씪
 	USceneComponent* Tail = MakePivot(this, Head, FVector(-34, 0, 46));
 	for (int32 i = 0; i < 3; ++i)
 	{
@@ -191,7 +191,7 @@ void AYJJHero::BuildBody()
 		Tail = MakePivot(this, Tail, FVector(-14, 0, -20));
 	}
 	YJJShapes::Add(this, Head, EYJJShape::Cube, FVector(-30, 0, 50), FVector(10, 26, 10), ScarfMat, false);
-	// 눈: 큰 세로 타원 + 하이라이트
+	// ?? ???몃줈 ???+ ?섏씠?쇱씠??
 	for (int32 Side = -1; Side <= 1; Side += 2)
 	{
 		YJJShapes::Add(this, Head, EYJJShape::Sphere, FVector(30, Side * 13.f, 36), FVector(8, 12, 18), EyeMat, false);
@@ -199,7 +199,7 @@ void AYJJHero::BuildBody()
 		YJJShapes::Add(this, Head, EYJJShape::Sphere, FVector(28, Side * 20.f, 24), FVector(4, 10, 5), YJJShapes::Solid(this, FLinearColor(1.f, 0.6f, 0.6f), 0.2f), false);
 	}
 
-	// 검: 평소엔 등에 비스듬히, 공격할 때 손에
+	// 寃: ?됱냼???깆뿉 鍮꾩뒪?ы엳, 怨듦꺽?????먯뿉
 	SwordPivot = MakePivot(this, Torso, FVector(-26, 0, 34));
 	UMaterialInterface* Blade = YJJShapes::Surface(this, FLinearColor(0.85f, 0.95f, 1.f), FLinearColor(0.55f, 0.7f, 0.85f), 0.6f, 0.15f);
 	YJJShapes::Add(this, SwordPivot, EYJJShape::Cube, FVector(0, 0, 62), FVector(4, 12, 104), Blade, false);
@@ -208,12 +208,12 @@ void AYJJHero::BuildBody()
 	YJJShapes::Add(this, SwordPivot, EYJJShape::Cylinder, FVector(0, 0, -10), FVector(8, 8, 26), LeatherMat, false);
 	YJJShapes::Add(this, SwordPivot, EYJJShape::Sphere, FVector(0, 0, -26), FVector(11, 11, 11), YJJShapes::Solid(this, FLinearColor(0.3f, 0.85f, 1.f), 2.f), false);
 
-	// 베기 궤적 (납작한 빛 원판)
+	// 踰좉린 沅ㅼ쟻 (?⑹옉??鍮??먰뙋)
 	SlashMID = YJJShapes::Glow(this, FLinearColor(0.7f, 0.95f, 1.f), 0.f, 0.f, 2.f);
 	Slash = YJJShapes::Add(this, Visual, EYJJShape::Cylinder, FVector(70, 0, 110), FVector(380, 380, 4), SlashMID, false);
 	Slash->SetVisibility(false);
 
-	// 활공 날개 (등 뒤에서 펼쳐진다)
+	// ?쒓났 ?좉컻 (???ㅼ뿉???쇱퀜吏꾨떎)
 	Glider = MakePivot(this, Torso, FVector(-20, 0, 70));
 	UMaterialInterface* Wing = YJJShapes::Surface(this, FLinearColor(0.98f, 0.96f, 0.9f), FLinearColor(0.55f, 0.8f, 0.85f), 0.15f, 0.7f);
 	for (int32 Side = -1; Side <= 1; Side += 2)
@@ -224,13 +224,13 @@ void AYJJHero::BuildBody()
 	Glider->SetRelativeScale3D(FVector(0.01f));
 	Glider->SetVisibility(false, true);
 
-	// 발밑 그림자 (점프 착지 위치 보기 쉽게)
+	// 諛쒕컩 洹몃┝??(?먰봽 李⑹? ?꾩튂 蹂닿린 ?쎄쾶)
 	DropShadow = YJJShapes::Add(this, RootComponent, EYJJShape::Cylinder, FVector::ZeroVector, FVector(90, 90, 2), YJJShapes::Solid(this, FLinearColor(0.04f, 0.05f, 0.08f)), false);
 	DropShadow->SetUsingAbsoluteRotation(true);
 	DropShadow->SetCastShadow(false);
 }
 
-// ============================================================ 입력
+// ============================================================ ?낅젰
 
 void AYJJHero::BuildInput()
 {
@@ -254,7 +254,7 @@ void AYJJHero::BuildInput()
 
 	MappingContext = NewObject<UInputMappingContext>(this, TEXT("IMC_Hero"));
 
-	// 키 하나를 Axis2D 액션에 매핑: X축 입력을 Y로 돌리거나(bToY) 부호를 뒤집는다(bNegate)
+	// ???섎굹瑜?Axis2D ?≪뀡??留ㅽ븨: X異??낅젰??Y濡??뚮━嫄곕굹(bToY) 遺?몃? ?ㅼ쭛?붾떎(bNegate)
 	auto MapAxisKey = [this](UInputAction* Action, const FKey& Key, bool bToY, bool bNegate)
 	{
 		FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(Action, Key);
@@ -276,7 +276,7 @@ void AYJJHero::BuildInput()
 	MapAxisKey(MoveAction, EKeys::A, false, true);
 	MappingContext->MapKey(MoveAction, EKeys::Gamepad_Left2D);
 
-	// 마우스/스틱 Y는 위로 올리면 +, 카메라 피치 입력은 아래가 + 이므로 Y만 뒤집는다
+	// 留덉슦???ㅽ떛 Y???꾨줈 ?щ━硫?+, 移대찓???쇱튂 ?낅젰? ?꾨옒媛 + ?대?濡?Y留??ㅼ쭛?붾떎
 	auto MapLookKey = [this](const FKey& Key, float Scale)
 	{
 		FEnhancedActionKeyMapping& Mapping = MappingContext->MapKey(LookAction, Key);
@@ -384,7 +384,7 @@ void AYJJHero::JumpPressed(const FInputActionValue& Value)
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 	if (MoveComp->IsFalling())
 	{
-		// 공중에서 누르면 활공을 펴거나 접는다
+		// 怨듭쨷?먯꽌 ?꾨Ⅴ硫??쒓났???닿굅???묐뒗??
 		SetGliding(!bGliding);
 		return;
 	}
@@ -434,7 +434,7 @@ void AYJJHero::SetGliding(bool bOn)
 	{
 		Glider->SetVisibility(true, true);
 		YJJAudio::Play(this, EYJJSound::GlideOpen, FVector::ZeroVector, 0.6f);
-		// 펼치는 순간 떨어지던 속도를 크게 줄인다 (붕 뜨는 느낌)
+		// ?쇱튂???쒓컙 ?⑥뼱吏???띾룄瑜??ш쾶 以꾩씤??(遺??⑤뒗 ?먮굦)
 		FVector V = MoveComp->Velocity;
 		V.Z = FMath::Max(V.Z * 0.2f, -GlideSinkSpeed);
 		MoveComp->Velocity = V;
@@ -470,7 +470,7 @@ void AYJJHero::DoInteract()
 
 FString AYJJHero::GetInteractPrompt() const
 {
-	// 등불 받침 모서리처럼 살짝 걸쳐 있어도(낙하 상태) 안내는 보여준다. 활공 중만 제외
+	// ?깅텋 諛쏆묠 紐⑥꽌由ъ쿂???댁쭩 嫄몄퀜 ?덉뼱???숉븯 ?곹깭) ?덈궡??蹂댁뿬以?? ?쒓났 以묐쭔 ?쒖쇅
 	if (!CanAct() || bGliding)
 	{
 		return FString();
@@ -480,14 +480,14 @@ FString AYJJHero::GetInteractPrompt() const
 	{
 		if (It->CanInteract(P))
 		{
-			return FString::Printf(TEXT("%s 밝히기"), *It->GetLanternName());
+			return FString::Printf(TEXT("%s 諛앺엳湲?), *It->GetLanternName());
 		}
 	}
 	for (TActorIterator<AYJJShrine> It(GetWorld()); It; ++It)
 	{
 		if (It->CanInteract(P))
 		{
-			return TEXT("성소에 빛을 되돌리기");
+			return TEXT("?깆냼??鍮쏆쓣 ?섎룎由ш린");
 		}
 	}
 	return FString();
@@ -499,7 +499,7 @@ void AYJJHero::DoAttack()
 	{
 		return;
 	}
-	// 마지막 1/3 구간에선 다음 공격을 이어서 할 수 있다 (콤보)
+	// 留덉?留?1/3 援ш컙?먯꽑 ?ㅼ쓬 怨듦꺽???댁뼱???????덈떎 (肄ㅻ낫)
 	if (AttackTime >= 0.f && AttackTime < AttackDuration * 0.65f)
 	{
 		return;
@@ -510,14 +510,14 @@ void AYJJHero::DoAttack()
 	Slash->SetVisibility(true);
 	YJJAudio::Play(this, EYJJSound::Swing, FVector::ZeroVector, 0.6f, 1.f + AttackCombo * 0.08f);
 
-	// 공격하는 순간 살짝 앞으로 내딛는다
+	// 怨듦꺽?섎뒗 ?쒓컙 ?댁쭩 ?욎쑝濡??대뵛?붾떎
 	if (!GetCharacterMovement()->IsFalling())
 	{
 		LaunchCharacter(GetActorForwardVector() * 450.f, false, false);
 	}
 }
 
-// ============================================================ 체력·부활
+// ============================================================ 泥대젰쨌遺??
 
 void AYJJHero::TakeHit(const FVector& From)
 {
@@ -534,7 +534,7 @@ void AYJJHero::TakeHit(const FVector& From)
 
 	FVector Away = GetActorLocation() - From;
 	Away.Z = 0.f;
-	// 섬 밖으로 날아가지 않을 만큼만 밀어낸다
+	// ??諛뽰쑝濡??좎븘媛吏 ?딆쓣 留뚰겮留?諛?대궦??
 	LaunchCharacter(Away.GetSafeNormal() * 420.f + FVector(0, 0, 380.f), true, true);
 	YJJAudio::Play(this, EYJJSound::Hurt);
 	UE_LOG(LogYJJFantasy, Display, TEXT("[Hero] hit health=%d"), Health);
@@ -578,7 +578,7 @@ void AYJJHero::Respawn()
 
 void AYJJHero::UpdateRespawn(float DeltaTime)
 {
-	// 하늘 아래로 떨어지면 암전 후 체크포인트로
+	// ?섎뒛 ?꾨옒濡??⑥뼱吏硫??붿쟾 ??泥댄겕?ъ씤?몃줈
 	if (RespawnTimer < 0.f && GetActorLocation().Z < KillZ)
 	{
 		RespawnTimer = 0.f;
@@ -601,7 +601,7 @@ void AYJJHero::UpdateRespawn(float DeltaTime)
 	}
 }
 
-// ============================================================ 매 프레임
+// ============================================================ 留??꾨젅??
 
 float AYJJHero::GetMaxStamina() const
 {
@@ -627,7 +627,7 @@ void AYJJHero::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	Time += DeltaTime;
 
-	// 진단: 처음 몇 초 동안 움직임 상태
+	// 吏꾨떒: 泥섏쓬 紐?珥??숈븞 ?吏곸엫 ?곹깭
 	if (Time < 6.f && FMath::Fmod(Time, 0.5f) < DeltaTime)
 	{
 		UE_LOG(LogYJJFantasy, Display, TEXT("[Hero] t=%.1f z=%.0f mode=%d vz=%.0f glide=%d"), Time, GetActorLocation().Z - 300000.f,
@@ -645,7 +645,7 @@ void AYJJHero::Tick(float DeltaTime)
 	Invulnerable = FMath::Max(0.f, Invulnerable - DeltaTime);
 	HurtFlash = FMath::Max(0.f, HurtFlash - DeltaTime * 2.5f);
 	SinceHurt += DeltaTime;
-	// 한동안 안 맞으면 체력이 천천히 찬다
+	// ?쒕룞????留욎쑝硫?泥대젰??泥쒖쿇??李щ떎
 	if (!bDead && Health < MaxHealth && SinceHurt > 8.f)
 	{
 		Health++;
@@ -680,7 +680,7 @@ void AYJJHero::UpdateMovement(float DeltaTime)
 		V.Z = FMath::FInterpTo(V.Z, TargetZ, DeltaTime, bInUpdraft ? 2.5f : 4.f);
 		MoveComp->Velocity = V;
 
-		// 입력이 없어도 앞으로 미끄러진다
+		// ?낅젰???놁뼱???욎쑝濡?誘몃걚?ъ쭊??
 		if (MoveInput.IsNearlyZero() && !bInUpdraft)
 		{
 			AddMovementInput(GetActorForwardVector(), 0.45f);
@@ -693,7 +693,7 @@ void AYJJHero::UpdateMovement(float DeltaTime)
 		bSprinting = bSprintHeld && !bExhausted && !bFalling && Stamina > 0.f && GetVelocity().Size2D() > 50.f;
 		MoveComp->MaxWalkSpeed = bSprinting ? SprintSpeed : WalkSpeed;
 
-		// 활공 없이 상승 기류에 들어가도 조금 떠오른다 (활공하라는 힌트)
+		// ?쒓났 ?놁씠 ?곸듅 湲곕쪟???ㅼ뼱媛??議곌툑 ?좎삤瑜몃떎 (?쒓났?섎씪???뚰듃)
 		if (bInUpdraft && bFalling && MoveComp->Velocity.Z < 300.f)
 		{
 			MoveComp->Velocity.Z = FMath::FInterpTo(MoveComp->Velocity.Z, 300.f, DeltaTime, 3.f);
@@ -747,7 +747,7 @@ void AYJJHero::UpdateAttack(float DeltaTime)
 	AttackTime += DeltaTime;
 	const float A = AttackTime / AttackDuration;
 
-	// 베기 궤적: 휘두르는 방향으로 돌면서 사라진다
+	// 踰좉린 沅ㅼ쟻: ?섎몢瑜대뒗 諛⑺뼢?쇰줈 ?뚮㈃???щ씪吏꾨떎
 	const float Dir = (AttackCombo == 1) ? -1.f : 1.f;
 	Slash->SetRelativeRotation(FRotator(AttackCombo == 2 ? 70.f : 8.f * Dir, Dir * (-80.f + 160.f * FMath::Min(A * 1.6f, 1.f)), 0));
 	Slash->SetRelativeScale3D(FVector(3.8f, 3.8f * FMath::Sin(FMath::Min(A * 1.6f, 1.f) * PI) + 0.01f, 0.04f));
@@ -797,9 +797,9 @@ void AYJJHero::UpdateFinale(float DeltaTime)
 	{
 		return;
 	}
-	// 카메라를 천천히 수정 쪽으로 올려다보게
+	// 移대찓?쇰? 泥쒖쿇???섏젙 履쎌쑝濡??щ젮?ㅻ낫寃?
 	const FVector Eye = GetActorLocation() + FVector(0, 0, 70);
-	// 카메라는 영웅 뒤에 있으므로, 컨트롤 방향을 수정 쪽으로 돌리면 영웅 너머로 수정이 보인다
+	// 移대찓?쇰뒗 ?곸썒 ?ㅼ뿉 ?덉쑝誘濡? 而⑦듃濡?諛⑺뼢???섏젙 履쎌쑝濡??뚮━硫??곸썒 ?덈㉧濡??섏젙??蹂댁씤??
 	const FVector Focus = Shrine->GetCrystalLocation() + FVector(0, 0, 500.f * FMath::Min(Adv->GetPhaseTime() / 6.f, 1.f));
 	const FRotator Look = (Focus - Eye).Rotation();
 	const FRotator Target(FMath::Clamp(Look.Pitch, -5.f, 22.f), Look.Yaw, 0.f);
@@ -825,7 +825,7 @@ void AYJJHero::UpdateBody(float DeltaTime)
 	}
 	Glider->SetRelativeScale3D(FVector(FMath::Max(GlideBlend, 0.01f)));
 
-	// 걷기 주기
+	// 嫄룰린 二쇨린
 	if (!bFalling)
 	{
 		WalkPhase += DeltaTime * Speed * 0.017f;
@@ -833,7 +833,7 @@ void AYJJHero::UpdateBody(float DeltaTime)
 	const float Swing = FMath::Sin(WalkPhase) * (bFalling ? 0.f : 1.f);
 	const float LegAmp = 42.f * FMath::Clamp(Speed / WalkSpeed, 0.f, 1.2f);
 
-	// 회전 속도로 몸을 기울인다
+	// ?뚯쟾 ?띾룄濡?紐몄쓣 湲곗슱?몃떎
 	const float Yaw = GetActorRotation().Yaw;
 	const float YawRate = FMath::FindDeltaAngleDegrees(LastYaw, Yaw) / FMath::Max(DeltaTime, 0.001f);
 	LastYaw = Yaw;
@@ -849,7 +849,7 @@ void AYJJHero::UpdateBody(float DeltaTime)
 	Visual->SetRelativeRotation(FRotator(LeanPitch, 0.f, -LeanRoll));
 	Visual->SetRelativeScale3D(FVector(1.f + LandSquash * 0.12f, 1.f + LandSquash * 0.12f, 1.f - LandSquash * 0.15f + Breath));
 
-	// 다리
+	// ?ㅻ━
 	float LegPitchL = Swing * LegAmp;
 	float LegPitchR = -Swing * LegAmp;
 	if (bFalling)
@@ -861,7 +861,7 @@ void AYJJHero::UpdateBody(float DeltaTime)
 	LegL->SetRelativeRotation(FRotator(-LegPitchL, 0, 0));
 	LegR->SetRelativeRotation(FRotator(-LegPitchR, 0, 0));
 
-	// 팔: 걸을 때 반대로 흔들고, 공중에선 벌리고, 활공 땐 날개를 잡는다
+	// ?? 嫄몄쓣 ??諛섎?濡??붾뱾怨? 怨듭쨷?먯꽑 踰뚮━怨? ?쒓났 ???좉컻瑜??〓뒗??
 	float ArmPitchL = -Swing * LegAmp * 0.8f;
 	float ArmPitchR = Swing * LegAmp * 0.8f;
 	float ArmRollL = -8.f;
@@ -880,7 +880,7 @@ void AYJJHero::UpdateBody(float DeltaTime)
 		ArmRollR = FMath::Lerp(ArmRollR, 25.f, GlideBlend);
 	}
 
-	// 검: 공격 중엔 오른손에서 크게 휘두르고, 아니면 등에
+	// 寃: 怨듦꺽 以묒뿏 ?ㅻⅨ?먯뿉???ш쾶 ?섎몢瑜닿퀬, ?꾨땲硫??깆뿉
 	if (AttackTime >= 0.f)
 	{
 		const float A = FMath::Clamp(AttackTime / AttackDuration, 0.f, 1.f);
@@ -901,7 +901,7 @@ void AYJJHero::UpdateBody(float DeltaTime)
 
 	Head->SetRelativeRotation(FRotator(-LeanPitch * 0.4f + GlideBlend * 40.f, 0.f, LeanRoll * 0.3f));
 
-	// 목도리·포니테일: 속도 반대 방향으로 휘날린다
+	// 紐⑸룄由?룻룷?덊뀒?? ?띾룄 諛섎? 諛⑺뼢?쇰줈 ?섎궇由곕떎
 	const FVector LocalVel = GetActorTransform().InverseTransformVectorNoScale(V);
 	const float Flow = FMath::Clamp(Speed / 900.f + FMath::Abs(V.Z) / 1500.f, 0.f, 1.2f);
 	for (int32 i = 0; i < Scarf.Num(); ++i)
@@ -916,7 +916,7 @@ void AYJJHero::UpdateBody(float DeltaTime)
 		Ponytail[i]->SetRelativeRotation(FRotator(FMath::Lerp(-10.f, 40.f, FMath::Min(Flow, 1.f)) / (i + 1), Wave, 0.f));
 	}
 
-	// 다쳐서 무적일 땐 깜빡인다
+	// ?ㅼ퀜??臾댁쟻????源쒕묀?몃떎
 	const bool bVisible = Invulnerable <= 0.f || FMath::Fmod(Time, 0.14f) > 0.05f;
 	Visual->SetVisibility(bVisible, true);
 	if (Slash->IsVisible() != (AttackTime >= 0.f))
@@ -928,7 +928,7 @@ void AYJJHero::UpdateBody(float DeltaTime)
 		Glider->SetVisibility(true, true);
 	}
 
-	// 발밑 그림자
+	// 諛쒕컩 洹몃┝??
 	FHitResult Hit;
 	FCollisionQueryParams Params(TEXT("HeroShadow"), false, this);
 	const FVector P = GetActorLocation();
@@ -936,7 +936,7 @@ void AYJJHero::UpdateBody(float DeltaTime)
 	{
 		const float H = P.Z - 96.f - Hit.ImpactPoint.Z;
 		const float S = FMath::Clamp(1.f - H / 1500.f, 0.3f, 1.f);
-		// 땅에 서 있을 땐 진짜 그림자가 있으니 공중에서만 착지 위치 표시
+		// ?낆뿉 ???덉쓣 ??吏꾩쭨 洹몃┝?먭? ?덉쑝??怨듭쨷?먯꽌留?李⑹? ?꾩튂 ?쒖떆
 		DropShadow->SetVisibility(H > 60.f);
 		DropShadow->SetWorldLocation(Hit.ImpactPoint + FVector(0, 0, 2));
 		DropShadow->SetWorldScale3D(FVector(0.9f * S, 0.9f * S, 0.02f));
@@ -970,7 +970,7 @@ void AYJJHero::UpdateCamera(float DeltaTime)
 		TargetArm = 1500.f;
 		TargetFov = 75.f;
 	}
-	// 엔딩 땐 기둥에 카메라가 막혀 영웅 등만 보이지 않게
+	// ?붾뵫 ??湲곕뫁??移대찓?쇨? 留됲? ?곸썒 ?깅쭔 蹂댁씠吏 ?딄쾶
 	CameraBoom->bDoCollisionTest = !bFinale;
 	TargetFov += FMath::Clamp((Speed - 900.f) / 600.f, 0.f, 1.f) * 4.f;
 

@@ -776,16 +776,19 @@ void AYJJWorldBuilder::BuildForest()
 		const float A = i * (TWO_PI / 5.f) + 0.3f;
 		YJJShapes::Add(Tree, R, EYJJShape::Cylinder, FVector(FMath::Cos(A) * 420.f, FMath::Sin(A) * 420.f, 80), FVector(160, 160, 520), Bark, true, FRotator(-50, FMath::RadiansToDegrees(A), 0));
 	}
-	// 나선 발판 (버섯 선반 모양)
-	for (int32 i = 0; i < 9; ++i)
+	// 나선 발판 (버섯 선반 모양). 점프 높이가 약 195라 한 단 165씩 올라간다
+	UMaterialInterface* Cap = YJJShapes::Surface(Tree, FLinearColor(0.95f, 0.75f, 0.45f), FLinearColor(0.85f, 0.55f, 0.35f), 0.08f);
+	for (int32 i = 0; i < 16; ++i)
 	{
-		const float A = i * 0.95f;
-		const float Z = 260.f + i * 255.f;
-		const FVector P(FMath::Cos(A) * 470.f, FMath::Sin(A) * 470.f, Z);
-		YJJShapes::Add(Tree, R, EYJJShape::Cylinder, P, FVector(420, 420, 50), Moss, true, FRotator(0, FMath::RadiansToDegrees(A), 0));
-		if (i % 2 == 0)
+		const float A = i * 0.62f;
+		const float Z = 125.f + i * 165.f;
+		const FVector P(FMath::Cos(A) * 480.f, FMath::Sin(A) * 480.f, Z);
+		YJJShapes::Add(Tree, R, EYJJShape::Cylinder, P, FVector(440, 440, 50), Moss, true, FRotator(0, FMath::RadiansToDegrees(A), 0));
+		// 선반 아래 버섯 갓 장식
+		YJJShapes::Add(Tree, R, EYJJShape::Sphere, P + FVector(0, 0, -30), FVector(400, 400, 90), Cap, false);
+		if (i % 3 == 0)
 		{
-			AddStardust(C + P + FVector(0, 0, 140));
+			AddStardust(C + P + FVector(0, 0, 150));
 		}
 	}
 	// 꼭대기 넓은 가지 + 큰 잎 덩어리
@@ -966,5 +969,32 @@ void AYJJWorldBuilder::BuildVista()
 		const float S = 150.f + YJJShapes::Hash(i * 29) * 500.f;
 		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Cylinder, FVector::ZeroVector, FVector(S * 2.f, S * 2.f, S * 0.4f), YJJShapes::Surface(Rock, GrassHub, RockWarm), false);
 		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Cone, FVector(0, 0, -S * 0.6f), FVector(S * 1.8f, S * 1.8f, S), YJJShapes::Solid(Rock, RockWarm), false, FRotator(180, 0, 0));
+	}
+
+	// 몽실몽실한 뭉게구름: 섬 사이와 아래에 떠 있다 (구 여러 개를 뭉쳐서)
+	for (int32 i = 0; i < 46; ++i)
+	{
+		const float A = YJJShapes::Hash(i * 41 + 3) * TWO_PI;
+		const float D = 3500.f + YJJShapes::Hash(i * 43 + 5) * 22000.f;
+		// 절반은 섬보다 아래(발밑 구름), 절반은 위아래로 고르게
+		const float Z = (i % 2 == 0) ? -2500.f - YJJShapes::Hash(i * 47) * 3000.f : -1500.f + YJJShapes::Hash(i * 53) * 9000.f;
+		const FVector P = W(FMath::Cos(A) * D, FMath::Sin(A) * D, Z);
+		// 섬과 겹치면 건너뛴다
+		if (FVector::Dist2D(P, W(0, 0, 0)) < 3200.f)
+		{
+			continue;
+		}
+		AYJJProp* Cloud = NewProp(P, FRotator(0, YJJShapes::Hash(i * 59) * 360.f, 0));
+		UMaterialInterface* Mat = YJJShapes::Surface(Cloud, FLinearColor(1.f, 1.f, 1.f), FLinearColor(0.78f, 0.84f, 0.98f), 0.35f, 1.f);
+		const float S = 500.f + YJJShapes::Hash(i * 61) * 1300.f;
+		const int32 Puffs = 4 + i % 4;
+		for (int32 k = 0; k < Puffs; ++k)
+		{
+			const float X = (k - (Puffs - 1) * 0.5f) * S * 0.55f;
+			const float PS = S * (k == Puffs / 2 ? 1.f : 0.6f + 0.35f * YJJShapes::Hash(i * 67 + k));
+			YJJShapes::Add(Cloud, Cloud->GetRootComponent(), EYJJShape::Sphere, FVector(X, (YJJShapes::Hash(i * 71 + k) - 0.5f) * S * 0.4f, PS * 0.15f), FVector(PS, PS * 0.85f, PS * 0.65f), Mat, false);
+		}
+		// 납작한 바닥
+		YJJShapes::Add(Cloud, Cloud->GetRootComponent(), EYJJShape::Cylinder, FVector(0, 0, -S * 0.05f), FVector(S * Puffs * 0.55f, S * 0.7f, S * 0.12f), Mat, false);
 	}
 }

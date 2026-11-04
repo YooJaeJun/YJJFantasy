@@ -178,6 +178,24 @@ void UYJJAutoPilot::StartAutoPlay()
 		Shot(TEXT("Play_0_Start"));
 	});
 
+	// 점프 높이: 고목 나선 발판(한 단 165)을 오를 수 있어야 한다
+	Add(0.3f, [this] {
+		View(W(-1600, -1200, 120), 45.f, -10.f);
+	});
+	Add(0.6f, [this] {
+		if (AYJJHero* H = Hero())
+		{
+			TrackStartZ = H->GetActorLocation().Z;
+			TrackMaxZ = TrackStartZ;
+			H->Jump();
+		}
+	});
+	for (int32 i = 0; i < 12; ++i)
+	{
+		Add(0.05f, [this] { if (AYJJHero* H = Hero()) { TrackMaxZ = FMath::Max(TrackMaxZ, H->GetActorLocation().Z); } });
+	}
+	Add(0.5f, [this] { Check(TrackMaxZ - TrackStartZ > 180.f, FString::Printf(TEXT("jump height %.0f (need > 180)"), TrackMaxZ - TrackStartZ)); });
+
 	// 활공 + 상승 기류: 중앙섬 서쪽 기류 위에서 활공하면 높이 올라가야 한다
 	Add(0.2f, [this] {
 		View(W(-2350, -500, 400), 180.f, -10.f);
