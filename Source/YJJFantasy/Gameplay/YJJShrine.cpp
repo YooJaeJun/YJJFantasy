@@ -4,7 +4,10 @@
 #include "Components/StaticMeshComponent.h"
 #include "Core/YJJAdventureSubsystem.h"
 #include "Core/YJJAudio.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
 #include "EngineUtils.h"
+#include "GameFramework/PlayerController.h"
 #include "Gameplay/YJJLantern.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "World/YJJEnvironment.h"
@@ -178,6 +181,26 @@ void AYJJShrine::Interact()
 		Adv->StartFinale();
 	}
 	YJJAudio::Play(this, EYJJSound::Finale);
+
+	// 영웅이 서 있는 쪽에서 성소를 비스듬히 올려다보는 카메라로 넘어간다
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		if (const APawn* Hero = PC->GetPawn())
+		{
+			const FVector ToHero = Hero->GetActorLocation() - GetActorLocation();
+			CameraAngle = FMath::Atan2(ToHero.Y, ToHero.X);
+		}
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		FinaleCamera = GetWorld()->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), FTransform::Identity, Params);
+		if (FinaleCamera)
+		{
+			FinaleCamera->GetCameraComponent()->SetFieldOfView(72.f);
+			FinaleCamera->GetCameraComponent()->bConstrainAspectRatio = false;
+			Tick(0.f);
+			PC->SetViewTargetWithBlend(FinaleCamera, 2.f, VTBlend_EaseInOut, 2.f);
+		}
+	}
 }
 
 FVector AYJJShrine::GetCrystalLocation() const
@@ -230,9 +253,10 @@ void AYJJShrine::Tick(float DeltaTime)
 		if (Beam->IsVisible())
 		{
 			const float T = FinaleTime - 2.2f;
-			BeamMID->SetScalarParameterValue(TEXT("Intensity"), 1.2f + 6.f * FMath::Exp(-T * 0.8f));
+			// 처음엔 굵고 눈부시게, 곧 수정이 비쳐 보일 만큼 가늘고 옅게
+			BeamMID->SetScalarParameterValue(TEXT("Intensity"), 0.45f + 5.f * FMath::Exp(-T * 1.1f));
 			const float W = 1.f + 2.5f * FMath::Exp(-T * 1.2f);
-			Beam->SetRelativeScale3D(FVector(3.6f * W, 3.6f * W, 400.f));
+			Beam->SetRelativeScale3D(FVector(2.2f * W, 2.2f * W, 400.f));
 
 			const float S = T / 2.5f;
 			Shockwave->SetRelativeLocation(FVector(0, 0, Height));
@@ -266,6 +290,26 @@ void AYJJShrine::Tick(float DeltaTime)
 	}
 
 	CrystalPivot->SetRelativeLocation(FVector(0, 0, Height));
+
+	// 엔딩 카메라: 천천히 돌며 솟아오르는 수정을 올려다본다. 엔딩이 끝나면 영웅에게 돌아간다
+	if (FinaleCamera)
+	{
+		CameraAngle += DeltaTime * FMath::DegreesToRadians(7.f);
+		const float Dist = 2900.f - FMath::Min(FinaleTime, 10.f) * 60.f;
+		const FVector Eye = GetActorLocation() + FVector(FMath::Cos(CameraAngle) * Dist, FMath::Sin(CameraAngle) * Dist, 500.f + FMath::Min(FinaleTime, 10.f) * 40.f);
+		const FVector Focus = GetActorLocation() + FVector(0, 0, Height + 250.f);
+		FinaleCamera->SetActorLocationAndRotation(Eye, (Focus - Eye).Rotation());
+
+		const UYJJAdventureSubsystem* Adv = UYJJAdventureSubsystem::Get(this);
+		if (!bCameraReturned && Adv && Adv->GetPhase() == EYJJPhase::Ended && Adv->GetPhaseTime() > 9.f)
+		{
+			bCameraReturned = true;
+			if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+			{
+				PC->SetViewTargetWithBlend(PC->GetPawn(), 2.f, VTBlend_EaseInOut, 2.f);
+			}
+		}
+	}
 	CrystalPivot->AddLocalRotation(FRotator(0, Spin * DeltaTime, 0));
 	const FLinearColor Body = bAwake ? CrystalColor : FLinearColor(0.42f, 0.5f, 0.6f);
 	CrystalMID->SetVectorParameterValue(TEXT("TopColor"), Body);

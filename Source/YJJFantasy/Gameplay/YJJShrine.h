@@ -64,6 +64,13 @@ private:
 	UPROPERTY()
 	TObjectPtr<UPointLightComponent> Light;
 
+	/** 엔딩 연출용 카메라 (성소 둘레를 천천히 돈다) */
+	UPROPERTY()
+	TObjectPtr<class ACameraActor> FinaleCamera;
+
+	float CameraAngle = 0.f;
+	bool bCameraReturned = false;
+
 	UPROPERTY()
 	TObjectPtr<UMaterialInstanceDynamic> CrystalMID;
 
