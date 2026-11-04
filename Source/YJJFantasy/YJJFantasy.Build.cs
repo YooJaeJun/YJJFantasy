@@ -10,5 +10,8 @@ public class YJJFantasy : ModuleRules
 		PublicIncludePaths.Add(ModuleDirectory);
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+
+		// HUD 글자 크기 측정
+		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "RenderCore" });
 	}
 }
