@@ -73,3 +73,5 @@ DevLog/Output/
 ### AI 3D 도구
 Tools/AI3D/.venv/
 Tools/AI3D/__pycache__/
+Tools/Character/Generated/preview_*.png
+Tools/Character/Generated/*.blend1

@@ -1,7 +1,9 @@
 #include "Player/YJJHero.h"
 
+#include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/YJJAdventureSubsystem.h"
 #include "Core/YJJAudio.h"
@@ -9,6 +11,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
+#include "Engine/SkeletalMesh.h"
 #include "Gameplay/YJJChest.h"
 #include "Gameplay/YJJLantern.h"
 #include "Gameplay/YJJShrine.h"
@@ -22,6 +25,7 @@
 #include "InputModifiers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "World/YJJShapes.h"
+#include "YJJAssetPaths.h"
 #include "YJJFantasy.h"
 
 namespace
@@ -46,6 +50,10 @@ namespace
 	constexpr float StaminaRegen = 32.f;
 	constexpr float AttackDuration = 0.34f;
 	constexpr float AttackRange = 260.f;
+
+	// 고양이 모델: Blender 키 1.55m -> 게임에서 약 1.7m, glTF 앞쪽(+Y)을 액터 앞(+X)으로
+	constexpr float HeroMeshScale = 1.1f;
+	constexpr float HeroMeshYaw = -90.f;
 
 	USceneComponent* MakePivot(AActor* Owner, USceneComponent* Parent, const FVector& Location)
 	{
@@ -119,92 +127,49 @@ void AYJJHero::BeginPlay()
 
 void AYJJHero::BuildBody()
 {
-	UMaterialInterface* SkinMat = YJJShapes::Solid(this, HeroColor::Skin, 0.05f, 0.7f);
-	UMaterialInterface* ClothMat = YJJShapes::Surface(this, HeroColor::Cloth, HeroColor::ClothShade, 0.f, 0.8f);
-	UMaterialInterface* TrimMat = YJJShapes::Solid(this, HeroColor::Trim, 0.05f, 0.6f);
-	UMaterialInterface* HairMat = YJJShapes::Surface(this, HeroColor::Hair, HeroColor::HairShade, 0.08f, 0.55f);
 	UMaterialInterface* LeatherMat = YJJShapes::Solid(this, HeroColor::Leather, 0.f, 0.7f);
 	UMaterialInterface* GoldMat = YJJShapes::Solid(this, HeroColor::Gold, 0.1f, 0.35f);
-	UMaterialInterface* ScarfMat = YJJShapes::Surface(this, HeroColor::ScarfColor, YJJShapes::Shade(HeroColor::ScarfColor, 0.75f), 0.05f);
-	UMaterialInterface* EyeMat = YJJShapes::Solid(this, HeroColor::EyeColor, 0.3f, 0.2f);
-	UMaterialInterface* WhiteMat = YJJShapes::Solid(this, FLinearColor::White, 1.5f, 0.2f);
 
-	// 발바닥 = 캡슐 아래 (-96)
+	// 발바닥 = 캡슐 아래 (-96). 기울기·찌그러짐은 이 축에 준다
 	Visual = MakePivot(this, RootComponent, FVector(0, 0, -96));
 
-	// 다리 (엉덩이 축에서 흔든다)
-	for (int32 Side = -1; Side <= 1; Side += 2)
+	// 리깅된 고양이 몸 (Blender: Tools/Character/make_hero.py)
+	Body = NewObject<USkeletalMeshComponent>(this, TEXT("CatBody"));
+	Body->SetupAttachment(Visual);
+	if (USkeletalMesh* CatMesh = LoadObject<USkeletalMesh>(nullptr, YJJAssetPaths::HeroMesh))
 	{
-		USceneComponent* Leg = MakePivot(this, Visual, FVector(0, Side * 13.f, 66.f));
-		YJJShapes::Add(this, Leg, EYJJShape::Cylinder, FVector(0, 0, -28), FVector(24, 24, 52), ClothMat, false);
-		YJJShapes::Add(this, Leg, EYJJShape::Cube, FVector(6, 0, -58), FVector(36, 22, 18), LeatherMat, false);
-		(Side < 0 ? LegL : LegR) = Leg;
+		Body->SetSkeletalMesh(CatMesh);
 	}
+	else
+	{
+		UE_LOG(LogYJJFantasy, Warning, TEXT("[Hero] 캐릭터 메시 없음: BuildContent.ps1로 임포트 필요"));
+	}
+	Body->SetRelativeScale3D(FVector(HeroMeshScale));
+	Body->SetRelativeRotation(FRotator(0.f, HeroMeshYaw, 0.f));
+	Body->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Body->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+	Body->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+	Body->RegisterComponent();
+	AddInstanceComponent(Body);
+	GetMesh()->SetVisibility(false);
 
-	Torso = MakePivot(this, Visual, FVector(0, 0, 70));
-	// 튜닉 (아래가 퍼진 원뿔 + 몸통)
-	YJJShapes::Add(this, Torso, EYJJShape::Cone, FVector(0, 0, 4), FVector(80, 72, 46), ClothMat, false);
-	YJJShapes::Add(this, Torso, EYJJShape::Cylinder, FVector(0, 0, 34), FVector(52, 44, 50), ClothMat, false);
-	YJJShapes::Add(this, Torso, EYJJShape::Cylinder, FVector(0, 0, -12), FVector(82, 74, 7), TrimMat, false);
-	YJJShapes::Add(this, Torso, EYJJShape::Cylinder, FVector(0, 0, 14), FVector(56, 48, 8), LeatherMat, false);
-	YJJShapes::Add(this, Torso, EYJJShape::Sphere, FVector(24, 0, 14), FVector(12, 16, 12), GoldMat, false);
-	YJJShapes::Add(this, Torso, EYJJShape::Cube, FVector(25, 0, 40), FVector(4, 18, 30), TrimMat, false);
+	static const TCHAR* AnimNames[] = { TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("Jump"), TEXT("Fall"), TEXT("Glide"), TEXT("Attack1"), TEXT("Attack2"), TEXT("Attack3"), TEXT("Hurt") };
+	static_assert(UE_ARRAY_COUNT(AnimNames) == (int32)EAnim::Count, "애니메이션 이름 수");
+	for (const TCHAR* Name : AnimNames)
+	{
+		const FString Path = FString::Printf(TEXT("%s/SK_Hero%s.SK_Hero%s"), YJJAssetPaths::HeroAnimDir, Name, Name);
+		UAnimSequence* Anim = LoadObject<UAnimSequence>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
+		if (!Anim)
+		{
+			UE_LOG(LogYJJFantasy, Warning, TEXT("[Hero] 애니메이션 없음 %s"), *Path);
+		}
+		Anims.Add(Anim);
+	}
+	PlayAnim(EAnim::Idle, 1.f);
 
-	// 목도리 + 휘날리는 꼬리
-	YJJShapes::Add(this, Torso, EYJJShape::Cylinder, FVector(0, 0, 62), FVector(54, 50, 14), ScarfMat, false);
-	USceneComponent* Prev = MakePivot(this, Torso, FVector(-22, 8, 60));
-	for (int32 i = 0; i < 4; ++i)
-	{
-		Scarf.Add(Prev);
-		YJJShapes::Add(this, Prev, EYJJShape::Cube, FVector(-14, 0, 0), FVector(28, 6, 16 - i * 2.f), ScarfMat, false);
-		Prev = MakePivot(this, Prev, FVector(-28, 0, 0));
-	}
-
-	// 팔 (어깨 축)
-	for (int32 Side = -1; Side <= 1; Side += 2)
-	{
-		USceneComponent* Arm = MakePivot(this, Torso, FVector(0, Side * 32.f, 54.f));
-		YJJShapes::Add(this, Arm, EYJJShape::Sphere, FVector(0, 0, 0), FVector(26, 26, 26), ClothMat, false);
-		YJJShapes::Add(this, Arm, EYJJShape::Cylinder, FVector(0, 0, -22), FVector(17, 17, 40), SkinMat, false);
-		YJJShapes::Add(this, Arm, EYJJShape::Cylinder, FVector(0, 0, -30), FVector(20, 20, 10), TrimMat, false);
-		YJJShapes::Add(this, Arm, EYJJShape::Sphere, FVector(0, 0, -46), FVector(20, 20, 20), SkinMat, false);
-		(Side < 0 ? ArmL : ArmR) = Arm;
-	}
-
-	// 머리: 큰 머리 비율(애니메 SD 느낌)
-	Head = MakePivot(this, Torso, FVector(0, 0, 70));
-	YJJShapes::Add(this, Head, EYJJShape::Cylinder, FVector(0, 0, 4), FVector(18, 18, 14), SkinMat, false);
-	YJJShapes::Add(this, Head, EYJJShape::Sphere, FVector(2, 0, 40), FVector(66, 62, 64), SkinMat, false);
-	// 머리카락: 뒤통수를 덮는 구 + 앞머리 원뿔 + 더듬이 머리
-	YJJShapes::Add(this, Head, EYJJShape::Sphere, FVector(-6, 0, 48), FVector(72, 70, 68), HairMat, false);
-	for (int32 i = -2; i <= 2; ++i)
-	{
-		YJJShapes::Add(this, Head, EYJJShape::Cone, FVector(28, i * 12.f, 56 - FMath::Abs(i) * 3.f), FVector(20, 18, 34), HairMat, false, FRotator(160, 0, i * 10.f));
-	}
-	for (int32 Side = -1; Side <= 1; Side += 2)
-	{
-		YJJShapes::Add(this, Head, EYJJShape::Cone, FVector(8, Side * 32.f, 34), FVector(18, 16, 46), HairMat, false, FRotator(180, 0, Side * -8.f));
-	}
-	YJJShapes::Add(this, Head, EYJJShape::Cone, FVector(4, 0, 86), FVector(10, 8, 34), HairMat, false, FRotator(-25, 0, 0));
-	// 포니테일
-	USceneComponent* Tail = MakePivot(this, Head, FVector(-34, 0, 46));
-	for (int32 i = 0; i < 3; ++i)
-	{
-		Ponytail.Add(Tail);
-		YJJShapes::Add(this, Tail, EYJJShape::Sphere, FVector(-10, 0, -8), FVector(30 - i * 6.f, 30 - i * 6.f, 34), HairMat, false);
-		Tail = MakePivot(this, Tail, FVector(-14, 0, -20));
-	}
-	YJJShapes::Add(this, Head, EYJJShape::Cube, FVector(-30, 0, 50), FVector(10, 26, 10), ScarfMat, false);
-	// 눈: 큰 세로 타원 + 하이라이트
-	for (int32 Side = -1; Side <= 1; Side += 2)
-	{
-		YJJShapes::Add(this, Head, EYJJShape::Sphere, FVector(30, Side * 13.f, 36), FVector(8, 12, 18), EyeMat, false);
-		YJJShapes::Add(this, Head, EYJJShape::Sphere, FVector(33, Side * 11.f, 41), FVector(4, 5, 6), WhiteMat, false);
-		YJJShapes::Add(this, Head, EYJJShape::Sphere, FVector(28, Side * 20.f, 24), FVector(4, 10, 5), YJJShapes::Solid(this, FLinearColor(1.f, 0.6f, 0.6f), 0.2f), false);
-	}
-
-	// 검: 평소엔 등에 비스듬히, 공격할 때 손에
-	SwordPivot = MakePivot(this, Torso, FVector(-26, 0, 34));
+	// 검: 평소엔 등에 비스듬히, 공격할 때 오른손에 (고양이 몸에 맞춘 짧은 검)
+	SwordPivot = MakePivot(this, Visual, FVector(-30, 0, 60));
+	SwordPivot->SetRelativeScale3D(FVector(0.75f));
 	UMaterialInterface* Blade = YJJShapes::Surface(this, FLinearColor(0.85f, 0.95f, 1.f), FLinearColor(0.55f, 0.7f, 0.85f), 0.6f, 0.15f);
 	YJJShapes::Add(this, SwordPivot, EYJJShape::Cube, FVector(0, 0, 62), FVector(4, 12, 104), Blade, false);
 	YJJShapes::Add(this, SwordPivot, EYJJShape::Cube, FVector(0, 0, 116), FVector(4, 6, 10), Blade, false, FRotator(0, 0, 45));
@@ -214,11 +179,11 @@ void AYJJHero::BuildBody()
 
 	// 베기 궤적 (납작한 빛 원판)
 	SlashMID = YJJShapes::Glow(this, FLinearColor(0.7f, 0.95f, 1.f), 0.f, 0.f, 2.f);
-	Slash = YJJShapes::Add(this, Visual, EYJJShape::Cylinder, FVector(70, 0, 110), FVector(380, 380, 4), SlashMID, false);
+	Slash = YJJShapes::Add(this, Visual, EYJJShape::Cylinder, FVector(70, 0, 80), FVector(380, 380, 4), SlashMID, false);
 	Slash->SetVisibility(false);
 
-	// 활공 날개 (등 뒤에서 펼쳐진다)
-	Glider = MakePivot(this, Torso, FVector(-20, 0, 70));
+	// 활공 날개: 머리 위에서 펼쳐져 두 앞발로 붙잡는다
+	Glider = MakePivot(this, Visual, FVector(-10, 0, 165));
 	// 깃털 세 겹 날개: 앞쪽이 길고 뒤로 갈수록 짧아진다. 끝은 청록색
 	UMaterialInterface* Feather = YJJShapes::Surface(this, FLinearColor(1.f, 0.98f, 0.94f), FLinearColor(0.85f, 0.9f, 0.95f), 0.2f, 0.7f);
 	UMaterialInterface* FeatherTip = YJJShapes::Surface(this, FLinearColor(0.45f, 0.85f, 0.85f), HeroColor::Trim, 0.3f, 0.6f);
@@ -243,6 +208,63 @@ void AYJJHero::BuildBody()
 	DropShadow = YJJShapes::Add(this, RootComponent, EYJJShape::Cylinder, FVector::ZeroVector, FVector(90, 90, 2), YJJShapes::Solid(this, FLinearColor(0.04f, 0.05f, 0.08f)), false);
 	DropShadow->SetUsingAbsoluteRotation(true);
 	DropShadow->SetCastShadow(false);
+}
+
+void AYJJHero::PlayAnim(EAnim Anim, float Rate)
+{
+	UAnimSequence* Seq = Anims.IsValidIndex((int32)Anim) ? Anims[(int32)Anim].Get() : nullptr;
+	if (!Seq || !Body)
+	{
+		return;
+	}
+	if (Anim != CurrentAnim)
+	{
+		const bool bLoop = Anim == EAnim::Idle || Anim == EAnim::Walk || Anim == EAnim::Run || Anim == EAnim::Fall || Anim == EAnim::Glide;
+		Body->PlayAnimation(Seq, bLoop);
+		CurrentAnim = Anim;
+	}
+	Body->SetPlayRate(Rate);
+}
+
+void AYJJHero::UpdateAnimation()
+{
+	const UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	const float Speed = GetVelocity().Size2D();
+	if (AttackTime >= 0.f)
+	{
+		const EAnim Attack = AttackCombo == 0 ? EAnim::Attack1 : (AttackCombo == 1 ? EAnim::Attack2 : EAnim::Attack3);
+		// 연타로 같은 공격이 다시 나오면 처음부터
+		if (Attack == CurrentAnim && AttackTime < 0.02f)
+		{
+			CurrentAnim = EAnim::Count;
+		}
+		const float Len = Anims.IsValidIndex((int32)Attack) && Anims[(int32)Attack] ? Anims[(int32)Attack]->GetPlayLength() : AttackDuration;
+		PlayAnim(Attack, Len / AttackDuration);
+	}
+	else if (SinceHurt < 0.4f)
+	{
+		PlayAnim(EAnim::Hurt, 1.f);
+	}
+	else if (bGliding)
+	{
+		PlayAnim(EAnim::Glide, 1.f);
+	}
+	else if (MoveComp->IsFalling())
+	{
+		PlayAnim(GetVelocity().Z > 150.f ? EAnim::Jump : EAnim::Fall, 1.f);
+	}
+	else if (Speed > 760.f)
+	{
+		PlayAnim(EAnim::Run, FMath::Clamp(Speed / 1050.f, 0.7f, 1.4f));
+	}
+	else if (Speed > 40.f)
+	{
+		PlayAnim(EAnim::Walk, FMath::Clamp(Speed / 480.f, 0.5f, 1.6f));
+	}
+	else
+	{
+		PlayAnim(EAnim::Idle, 1.f);
+	}
 }
 
 // ============================================================ 입력
@@ -859,95 +881,35 @@ void AYJJHero::UpdateBody(float DeltaTime)
 	}
 	Glider->SetRelativeScale3D(FVector(FMath::Max(GlideBlend, 0.01f)));
 
-	// 걷기 주기
-	if (!bFalling)
-	{
-		WalkPhase += DeltaTime * Speed * 0.017f;
-	}
-	const float Swing = FMath::Sin(WalkPhase) * (bFalling ? 0.f : 1.f);
-	const float LegAmp = 42.f * FMath::Clamp(Speed / WalkSpeed, 0.f, 1.2f);
+	UpdateAnimation();
 
-	// 회전 속도로 몸을 기울인다
+	// 회전 속도로 몸을 기울인다 (팔다리 동작은 애니메이션이 한다)
 	const float Yaw = GetActorRotation().Yaw;
 	const float YawRate = FMath::FindDeltaAngleDegrees(LastYaw, Yaw) / FMath::Max(DeltaTime, 0.001f);
 	LastYaw = Yaw;
 	LeanRoll = FMath::FInterpTo(LeanRoll, FMath::Clamp(YawRate * 0.03f * SpeedRatio, -18.f, 18.f) + (bGliding ? FMath::Clamp(YawRate * 0.05f, -30.f, 30.f) : 0.f), DeltaTime, 6.f);
-	const float TargetPitch = bGliding ? -62.f : (bFalling ? -6.f : -10.f * SpeedRatio);
+	// 활공 땐 몸을 앞으로 눕혀 날개에 매달린 모양
+	const float TargetPitch = bGliding ? -35.f : 0.f;
 	LeanPitch = FMath::FInterpTo(LeanPitch, TargetPitch, DeltaTime, 6.f);
 
+	// 착지하면 찌부러졌다가 통 튀어 오른다 (고무공 느낌)
 	LandSquash = FMath::FInterpTo(LandSquash, 0.f, DeltaTime, 9.f);
-	const float Bob = bFalling ? 0.f : FMath::Abs(FMath::Sin(WalkPhase)) * 5.f * FMath::Min(SpeedRatio * 2.f, 1.f);
-	const float Breath = FMath::Sin(Time * 2.2f) * 0.015f;
-
-	Visual->SetRelativeLocation(FVector(0, 0, -96.f + Bob - LandSquash * 8.f + GlideBlend * 40.f));
+	Visual->SetRelativeLocation(FVector(0, 0, -96.f - LandSquash * 10.f));
 	Visual->SetRelativeRotation(FRotator(LeanPitch, 0.f, -LeanRoll));
-	Visual->SetRelativeScale3D(FVector(1.f + LandSquash * 0.12f, 1.f + LandSquash * 0.12f, 1.f - LandSquash * 0.15f + Breath));
+	Visual->SetRelativeScale3D(FVector(1.f + LandSquash * 0.22f, 1.f + LandSquash * 0.22f, 1.f - LandSquash * 0.28f));
 
-	// 다리
-	float LegPitchL = Swing * LegAmp;
-	float LegPitchR = -Swing * LegAmp;
-	if (bFalling)
+	// 검: 공격 중엔 오른손(hand_r)에서 팔 방향으로 뻗고, 아니면 등에
+	if (AttackTime >= 0.f && Body && Body->GetBoneIndex(TEXT("hand_r")) != INDEX_NONE)
 	{
-		const float Tuck = bGliding ? 10.f : (V.Z > 0.f ? 35.f : 15.f);
-		LegPitchL = Tuck;
-		LegPitchR = Tuck * 0.4f;
-	}
-	LegL->SetRelativeRotation(FRotator(-LegPitchL, 0, 0));
-	LegR->SetRelativeRotation(FRotator(-LegPitchR, 0, 0));
-
-	// 팔: 걸을 때 반대로 흔들고, 공중에선 벌리고, 활공 땐 날개를 잡는다
-	float ArmPitchL = -Swing * LegAmp * 0.8f;
-	float ArmPitchR = Swing * LegAmp * 0.8f;
-	float ArmRollL = -8.f;
-	float ArmRollR = 8.f;
-	if (bFalling && !bGliding)
-	{
-		ArmRollL = -55.f;
-		ArmRollR = 55.f;
-		ArmPitchL = ArmPitchR = 20.f;
-	}
-	if (GlideBlend > 0.01f)
-	{
-		ArmPitchL = FMath::Lerp(ArmPitchL, 160.f, GlideBlend);
-		ArmPitchR = FMath::Lerp(ArmPitchR, 160.f, GlideBlend);
-		ArmRollL = FMath::Lerp(ArmRollL, -25.f, GlideBlend);
-		ArmRollR = FMath::Lerp(ArmRollR, 25.f, GlideBlend);
-	}
-
-	// 검: 공격 중엔 오른손에서 크게 휘두르고, 아니면 등에
-	if (AttackTime >= 0.f)
-	{
-		const float A = FMath::Clamp(AttackTime / AttackDuration, 0.f, 1.f);
-		const float Ease = 1.f - FMath::Pow(1.f - FMath::Min(A * 1.6f, 1.f), 3.f);
-		const float Dir = (AttackCombo == 1) ? -1.f : 1.f;
-		ArmPitchR = 90.f;
-		ArmRollR = Dir * (70.f - 140.f * Ease);
-		SwordPivot->SetRelativeLocation(FVector(20.f, 0.f, 40.f));
-		SwordPivot->SetRelativeRotation(FRotator(-90.f + (AttackCombo == 2 ? -40.f * Ease : 0.f), Dir * (-90.f + 180.f * Ease), 0.f));
+		const FVector Hand = Body->GetBoneLocation(TEXT("hand_r"));
+		const FVector Shoulder = Body->GetBoneLocation(TEXT("arm_r"));
+		const FVector Dir = (Hand - Shoulder).GetSafeNormal();
+		SwordPivot->SetWorldLocationAndRotation(Hand, FRotationMatrix::MakeFromZX(Dir, GetActorForwardVector()).Rotator());
 	}
 	else
 	{
-		SwordPivot->SetRelativeLocation(FVector(-26.f, 0.f, 22.f));
+		SwordPivot->SetRelativeLocation(FVector(-34.f, 0.f, 40.f));
 		SwordPivot->SetRelativeRotation(FRotator(0.f, 0.f, 35.f));
-	}
-	ArmL->SetRelativeRotation(FRotator(-ArmPitchL, 0.f, ArmRollL));
-	ArmR->SetRelativeRotation(FRotator(-ArmPitchR, 0.f, ArmRollR));
-
-	Head->SetRelativeRotation(FRotator(-LeanPitch * 0.4f + GlideBlend * 40.f, 0.f, LeanRoll * 0.3f));
-
-	// 목도리·포니테일: 속도 반대 방향으로 휘날린다
-	const FVector LocalVel = GetActorTransform().InverseTransformVectorNoScale(V);
-	const float Flow = FMath::Clamp(Speed / 900.f + FMath::Abs(V.Z) / 1500.f, 0.f, 1.2f);
-	for (int32 i = 0; i < Scarf.Num(); ++i)
-	{
-		const float Wave = FMath::Sin(Time * 9.f - i * 1.1f) * (6.f + 14.f * Flow);
-		const float Lift = FMath::Lerp(-55.f, 8.f, FMath::Min(Flow, 1.f)) / (i + 1);
-		Scarf[i]->SetRelativeRotation(FRotator(Lift + (LocalVel.Z * 0.01f), Wave + LocalVel.Y * -0.02f, 0.f));
-	}
-	for (int32 i = 0; i < Ponytail.Num(); ++i)
-	{
-		const float Wave = FMath::Sin(Time * 6.f - i * 0.9f) * (4.f + 10.f * Flow);
-		Ponytail[i]->SetRelativeRotation(FRotator(FMath::Lerp(-10.f, 40.f, FMath::Min(Flow, 1.f)) / (i + 1), Wave, 0.f));
 	}
 
 	// 다쳐서 무적일 땐 깜빡인다

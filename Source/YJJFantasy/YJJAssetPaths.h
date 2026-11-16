@@ -18,6 +18,10 @@ namespace YJJAssetPaths
 
 	inline const TCHAR* CloudMaterial = TEXT("/Engine/EngineSky/VolumetricClouds/m_SimpleVolumetricCloud_Inst.m_SimpleVolumetricCloud_Inst");
 
+	/** 주인공 고양이 (Blender: Tools/Character/make_hero.py). 애니메이션은 HeroAnimDir/SK_Hero<이름> */
+	inline const TCHAR* HeroMesh = TEXT("/Game/YJJFantasy/Characters/SK_Hero/SK_Hero/SkeletalMeshes/SK_Hero.SK_Hero");
+	inline const TCHAR* HeroAnimDir = TEXT("/Game/YJJFantasy/Characters/SK_Hero/SK_Hero/SkeletalMeshes");
+
 	/** AI로 만든 모델이 임포트되는 폴더 */
 	inline const TCHAR* AIModelDir = TEXT("/Game/YJJFantasy/AI");
 

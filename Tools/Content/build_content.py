@@ -330,6 +330,26 @@ def import_ai_models():
         log(f"AI 모델 {name}: {list(task.get_editor_property('imported_object_paths'))}")
 
 
+CHAR_DIR = ROOT + "/Characters"
+CHAR_SRC = os.path.join(PROJECT_DIR, "Tools", "Character", "Generated")
+
+
+def import_characters():
+    """Blender로 만든 리깅 캐릭터(GLB: 스켈레탈 메시 + 스켈레톤 + 애니메이션들)"""
+    for path in sorted(glob.glob(os.path.join(CHAR_SRC, "*.glb"))):
+        name = os.path.splitext(os.path.basename(path))[0]
+        dest = f"{CHAR_DIR}/{name}"
+        task = unreal.AssetImportTask()
+        task.set_editor_property("filename", path)
+        task.set_editor_property("destination_path", dest)
+        task.set_editor_property("automated", True)
+        task.set_editor_property("replace_existing", True)
+        task.set_editor_property("save", True)
+        asset_tools.import_asset_tasks([task])
+        for p in task.get_editor_property("imported_object_paths"):
+            log(f"캐릭터 {name}: {p}")
+
+
 AUDIO_DIR = ROOT + "/Audio"
 AUDIO_SRC = os.path.join(PROJECT_DIR, "Tools", "Audio", "Generated")
 
@@ -371,6 +391,7 @@ def main():
     build_water()
     build_toon_pp()
     import_ai_models()
+    import_characters()
     import_sounds()
     make_map()
     assets.save_directory(ROOT, only_if_is_dirty=True, recursive=True)

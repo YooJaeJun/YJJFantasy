@@ -4,7 +4,9 @@
 #include "GameFramework/Character.h"
 #include "YJJHero.generated.h"
 
+class UAnimSequence;
 class UCameraComponent;
+class USkeletalMeshComponent;
 class USpringArmComponent;
 class UStaticMeshComponent;
 class UMaterialInstanceDynamic;
@@ -129,25 +131,20 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UInputAction> AttackAction;
 
-	// ---- 몸
+	// ---- 몸: Blender로 만든 리깅 고양이 (Tools/Character/make_hero.py)
 	UPROPERTY()
 	TObjectPtr<USceneComponent> Visual;
 	UPROPERTY()
-	TObjectPtr<USceneComponent> Torso;
+	TObjectPtr<USkeletalMeshComponent> Body;
+
+	/** 애니메이션 상태 (단일 노드 재생, 상태가 바뀔 때만 교체) */
+	enum class EAnim : uint8 { Idle, Walk, Run, Jump, Fall, Glide, Attack1, Attack2, Attack3, Hurt, Count };
 	UPROPERTY()
-	TObjectPtr<USceneComponent> Head;
-	UPROPERTY()
-	TObjectPtr<USceneComponent> LegL;
-	UPROPERTY()
-	TObjectPtr<USceneComponent> LegR;
-	UPROPERTY()
-	TObjectPtr<USceneComponent> ArmL;
-	UPROPERTY()
-	TObjectPtr<USceneComponent> ArmR;
-	UPROPERTY()
-	TArray<TObjectPtr<USceneComponent>> Scarf;
-	UPROPERTY()
-	TArray<TObjectPtr<USceneComponent>> Ponytail;
+	TArray<TObjectPtr<UAnimSequence>> Anims;
+	EAnim CurrentAnim = EAnim::Count;
+	void PlayAnim(EAnim Anim, float Rate);
+	void UpdateAnimation();
+
 	UPROPERTY()
 	TObjectPtr<USceneComponent> SwordPivot;
 	UPROPERTY()
