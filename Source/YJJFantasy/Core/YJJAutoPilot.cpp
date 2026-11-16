@@ -24,7 +24,7 @@ namespace
 {
 	FVector W(float X, float Y, float Z)
 	{
-		return FVector(X, Y, AYJJWorldBuilder::BaseZ + Z);
+		return AYJJWorldBuilder::W(X, Y, Z);
 	}
 
 	FAutoConsoleCommandWithWorld TourCommand(TEXT("yjj.Tour"), TEXT("명소 스크린샷 투어"), FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)

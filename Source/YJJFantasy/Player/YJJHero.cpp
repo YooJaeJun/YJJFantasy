@@ -27,16 +27,19 @@
 namespace
 {
 	// 몸 색: 하얀 여행자 옷 + 청록 망토 + 금발
-	const FLinearColor Skin(1.f, 0.82f, 0.7f);
-	const FLinearColor Cloth(0.95f, 0.93f, 0.88f);
-	const FLinearColor ClothShade(0.8f, 0.8f, 0.86f);
-	const FLinearColor Trim(0.16f, 0.55f, 0.62f);
-	const FLinearColor Hair(0.98f, 0.82f, 0.45f);
-	const FLinearColor HairShade(0.85f, 0.6f, 0.3f);
-	const FLinearColor Leather(0.42f, 0.27f, 0.17f);
-	const FLinearColor Gold(0.95f, 0.72f, 0.3f);
-	const FLinearColor ScarfColor(0.95f, 0.38f, 0.32f);
-	const FLinearColor EyeColor(0.1f, 0.45f, 0.5f);
+	namespace HeroColor
+	{
+		const FLinearColor Skin(1.f, 0.82f, 0.7f);
+		const FLinearColor Cloth(0.95f, 0.93f, 0.88f);
+		const FLinearColor ClothShade(0.8f, 0.8f, 0.86f);
+		const FLinearColor Trim(0.16f, 0.55f, 0.62f);
+		const FLinearColor Hair(0.98f, 0.82f, 0.45f);
+		const FLinearColor HairShade(0.85f, 0.6f, 0.3f);
+		const FLinearColor Leather(0.42f, 0.27f, 0.17f);
+		const FLinearColor Gold(0.95f, 0.72f, 0.3f);
+		const FLinearColor ScarfColor(0.95f, 0.38f, 0.32f);
+		const FLinearColor EyeColor(0.1f, 0.45f, 0.5f);
+	}
 
 	constexpr float StaminaSprintCost = 20.f;
 	constexpr float StaminaGlideCost = 7.f;
@@ -116,14 +119,14 @@ void AYJJHero::BeginPlay()
 
 void AYJJHero::BuildBody()
 {
-	UMaterialInterface* SkinMat = YJJShapes::Solid(this, Skin, 0.05f, 0.7f);
-	UMaterialInterface* ClothMat = YJJShapes::Surface(this, Cloth, ClothShade, 0.f, 0.8f);
-	UMaterialInterface* TrimMat = YJJShapes::Solid(this, Trim, 0.05f, 0.6f);
-	UMaterialInterface* HairMat = YJJShapes::Surface(this, Hair, HairShade, 0.08f, 0.55f);
-	UMaterialInterface* LeatherMat = YJJShapes::Solid(this, Leather, 0.f, 0.7f);
-	UMaterialInterface* GoldMat = YJJShapes::Solid(this, Gold, 0.1f, 0.35f);
-	UMaterialInterface* ScarfMat = YJJShapes::Surface(this, ScarfColor, YJJShapes::Shade(ScarfColor, 0.75f), 0.05f);
-	UMaterialInterface* EyeMat = YJJShapes::Solid(this, EyeColor, 0.3f, 0.2f);
+	UMaterialInterface* SkinMat = YJJShapes::Solid(this, HeroColor::Skin, 0.05f, 0.7f);
+	UMaterialInterface* ClothMat = YJJShapes::Surface(this, HeroColor::Cloth, HeroColor::ClothShade, 0.f, 0.8f);
+	UMaterialInterface* TrimMat = YJJShapes::Solid(this, HeroColor::Trim, 0.05f, 0.6f);
+	UMaterialInterface* HairMat = YJJShapes::Surface(this, HeroColor::Hair, HeroColor::HairShade, 0.08f, 0.55f);
+	UMaterialInterface* LeatherMat = YJJShapes::Solid(this, HeroColor::Leather, 0.f, 0.7f);
+	UMaterialInterface* GoldMat = YJJShapes::Solid(this, HeroColor::Gold, 0.1f, 0.35f);
+	UMaterialInterface* ScarfMat = YJJShapes::Surface(this, HeroColor::ScarfColor, YJJShapes::Shade(HeroColor::ScarfColor, 0.75f), 0.05f);
+	UMaterialInterface* EyeMat = YJJShapes::Solid(this, HeroColor::EyeColor, 0.3f, 0.2f);
 	UMaterialInterface* WhiteMat = YJJShapes::Solid(this, FLinearColor::White, 1.5f, 0.2f);
 
 	// 발바닥 = 캡슐 아래 (-96)
@@ -218,7 +221,7 @@ void AYJJHero::BuildBody()
 	Glider = MakePivot(this, Torso, FVector(-20, 0, 70));
 	// 깃털 세 겹 날개: 앞쪽이 길고 뒤로 갈수록 짧아진다. 끝은 청록색
 	UMaterialInterface* Feather = YJJShapes::Surface(this, FLinearColor(1.f, 0.98f, 0.94f), FLinearColor(0.85f, 0.9f, 0.95f), 0.2f, 0.7f);
-	UMaterialInterface* FeatherTip = YJJShapes::Surface(this, FLinearColor(0.45f, 0.85f, 0.85f), Trim, 0.3f, 0.6f);
+	UMaterialInterface* FeatherTip = YJJShapes::Surface(this, FLinearColor(0.45f, 0.85f, 0.85f), HeroColor::Trim, 0.3f, 0.6f);
 	for (int32 Side = -1; Side <= 1; Side += 2)
 	{
 		const FRotator Sweep(0, Side * -14.f, Side * -12.f);

@@ -19,31 +19,29 @@
 #include "Player/YJJHero.h"
 #include "World/YJJEnvironment.h"
 #include "World/YJJShapes.h"
+#include "World/YJJSkyWhale.h"
 #include "YJJFantasy.h"
 
 namespace
 {
-	/** 섬 좌표 (BaseZ 기준) -> 월드 좌표 */
-	FVector W(float X, float Y, float Z)
-	{
-		return FVector(X, Y, AYJJWorldBuilder::BaseZ + Z);
-	}
-
 	// 섬 팔레트: 동화 같은 밝은 색
-	const FLinearColor GrassHub(0.42f, 0.78f, 0.36f);
-	const FLinearColor GrassMeadow(0.55f, 0.85f, 0.32f);
-	const FLinearColor GrassCrystal(0.36f, 0.72f, 0.62f);
-	const FLinearColor GrassWater(0.38f, 0.8f, 0.45f);
-	const FLinearColor GrassForest(0.28f, 0.62f, 0.3f);
-	const FLinearColor GrassRuins(0.62f, 0.78f, 0.42f);
-	const FLinearColor RockWarm(0.62f, 0.56f, 0.5f);
-	const FLinearColor RockCool(0.5f, 0.52f, 0.6f);
-	const FLinearColor RockDark(0.42f, 0.4f, 0.44f);
-	const FLinearColor Marble(0.82f, 0.79f, 0.74f);
-	const FLinearColor LeafBright(0.45f, 0.8f, 0.3f);
-	const FLinearColor LeafDeep(0.2f, 0.55f, 0.32f);
-	const FLinearColor LeafPink(1.f, 0.7f, 0.8f);
-	const FLinearColor LeafGold(0.98f, 0.75f, 0.3f);
+	namespace IslandColor
+	{
+		const FLinearColor GrassHub(0.42f, 0.78f, 0.36f);
+		const FLinearColor GrassMeadow(0.55f, 0.85f, 0.32f);
+		const FLinearColor GrassCrystal(0.36f, 0.72f, 0.62f);
+		const FLinearColor GrassWater(0.38f, 0.8f, 0.45f);
+		const FLinearColor GrassForest(0.28f, 0.62f, 0.3f);
+		const FLinearColor GrassRuins(0.62f, 0.78f, 0.42f);
+		const FLinearColor RockWarm(0.62f, 0.56f, 0.5f);
+		const FLinearColor RockCool(0.5f, 0.52f, 0.6f);
+		const FLinearColor RockDark(0.42f, 0.4f, 0.44f);
+		const FLinearColor Marble(0.82f, 0.79f, 0.74f);
+		const FLinearColor LeafBright(0.45f, 0.8f, 0.3f);
+		const FLinearColor LeafDeep(0.2f, 0.55f, 0.32f);
+		const FLinearColor LeafPink(1.f, 0.7f, 0.8f);
+		const FLinearColor LeafGold(0.98f, 0.75f, 0.3f);
+	}
 
 	template <typename T>
 	T* SpawnDeferred(UWorld* World, const FVector& Location, const FRotator& Rotation = FRotator::ZeroRotator)
@@ -306,7 +304,7 @@ void AYJJWorldBuilder::Decorate(AYJJProp* Island, float Radius, const FLinearCol
 	}
 
 	// 돌멩이
-	UInstancedStaticMeshComponent* Pebbles = YJJShapes::AddInstanced(Island, R, EYJJShape::Sphere, YJJShapes::Surface(Island, FLinearColor(0.75f, 0.73f, 0.7f), RockWarm), false);
+	UInstancedStaticMeshComponent* Pebbles = YJJShapes::AddInstanced(Island, R, EYJJShape::Sphere, YJJShapes::Surface(Island, FLinearColor(0.75f, 0.73f, 0.7f), IslandColor::RockWarm), false);
 	for (int32 i = 0; i < FMath::RoundToInt(Radius / 60.f); ++i)
 	{
 		const float A = YJJShapes::Hash(Seed * 307 + i) * TWO_PI;
@@ -568,11 +566,11 @@ void AYJJWorldBuilder::BuildHub()
 {
 	// 바람의 성소: 시작 섬. 가운데 성소, 동쪽 징검돌(들꽃 언덕), 북쪽 버섯(수정섬), 서쪽 상승 기류(폭포 정원), 남쪽 절벽(고목의 숲)
 	const FVector C = W(0, 0, 0);
-	AYJJProp* Island = BuildIsland(C, 2700.f, GrassHub, RockWarm, 1, true, false);
-	AddHill(Island, FVector(-1500, 900, 0), 700, 90, GrassHub, RockWarm);
-	AddHill(Island, FVector(1300, -1500, 0), 600, 70, GrassHub, RockWarm);
+	AYJJProp* Island = BuildIsland(C, 2700.f, IslandColor::GrassHub, IslandColor::RockWarm, 1, true, false);
+	AddHill(Island, FVector(-1500, 900, 0), 700, 90, IslandColor::GrassHub, IslandColor::RockWarm);
+	AddHill(Island, FVector(1300, -1500, 0), 600, 70, IslandColor::GrassHub, IslandColor::RockWarm);
 	static const TArray<FLinearColor> Flowers = { FLinearColor(1.f, 0.85f, 0.3f), FLinearColor(0.6f, 0.75f, 1.f), FLinearColor(1.f, 1.f, 0.95f) };
-	Decorate(Island, 2700.f, GrassHub, 1, 150, Flowers);
+	Decorate(Island, 2700.f, IslandColor::GrassHub, 1, 150, Flowers);
 
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -582,19 +580,19 @@ void AYJJWorldBuilder::BuildHub()
 	const int32 Trees[][3] = { { -2100, -700, 1 }, { -1900, 1600, 2 }, { 900, 2200, 3 }, { 2150, -800, 4 }, { -400, -2250, 5 }, { 1700, 1500, 6 }, { -2300, 300, 7 } };
 	for (const auto& T : Trees)
 	{
-		AddTree(OnGround(W(T[0], T[1], 0)), 1.f + (T[2] % 3) * 0.15f, T[2], T[2] % 2 ? LeafBright : LeafPink);
+		AddTree(OnGround(W(T[0], T[1], 0)), 1.f + (T[2] % 3) * 0.15f, T[2], T[2] % 2 ? IslandColor::LeafBright : IslandColor::LeafPink);
 	}
-	AddRock(OnGround(W(-900, -2000, 0)), 220, 3, RockWarm);
-	AddRock(OnGround(W(2100, 600, 0)), 180, 4, RockWarm);
-	AddRock(OnGround(W(-2200, -1500, 0)), 260, 5, RockWarm);
-	AddPillar(OnGround(W(-1700, -1950, 0)), 420, 55, true, Marble);
-	AddPillar(OnGround(W(1900, 1900, 0)), 520, 55, false, Marble);
+	AddRock(OnGround(W(-900, -2000, 0)), 220, 3, IslandColor::RockWarm);
+	AddRock(OnGround(W(2100, 600, 0)), 180, 4, IslandColor::RockWarm);
+	AddRock(OnGround(W(-2200, -1500, 0)), 260, 5, IslandColor::RockWarm);
+	AddPillar(OnGround(W(-1700, -1950, 0)), 420, 55, true, IslandColor::Marble);
+	AddPillar(OnGround(W(1900, 1900, 0)), 520, 55, false, IslandColor::Marble);
 
 	// 동쪽 -> 들꽃 언덕: 오르막 징검돌
 	for (int32 i = 0; i < 6; ++i)
 	{
 		const FVector P = W(2950.f + i * 430.f, 250.f + i * 150.f + FMath::Sin(i * 1.3f) * 120.f, 40.f + i * 50.f);
-		AddStone(P, 170.f + (i % 2) * 30.f, GrassHub, RockWarm, i);
+		AddStone(P, 170.f + (i % 2) * 30.f, IslandColor::GrassHub, IslandColor::RockWarm, i);
 		AddStardust(P + FVector(0, 0, 150));
 	}
 
@@ -614,7 +612,7 @@ void AYJJWorldBuilder::BuildHub()
 	}
 
 	// 남쪽 절벽 끝 표지 (활공해서 내려가라는 뜻)
-	AddArch(OnGround(W(0, -2450, 0)), 0.f, 420.f, 380.f, Marble);
+	AddArch(OnGround(W(0, -2450, 0)), 0.f, 420.f, 380.f, IslandColor::Marble);
 	AddStardustLine(W(150, -3200, 0), W(1600, -5200, -700), 6);
 
 	// 성소 둘레 별가루
@@ -630,16 +628,25 @@ void AYJJWorldBuilder::BuildMeadow()
 {
 	// 들꽃 언덕: 완만한 언덕, 꽃밭, 슬라임 셋. 등불은 언덕 꼭대기
 	const FVector C = W(6900, 1300, 320);
-	AYJJProp* Island = BuildIsland(C, 2000.f, GrassMeadow, RockWarm, 2, true, false);
-	AddHill(Island, FVector(500, 300, 0), 900, 180, GrassMeadow, RockWarm);
-	AddHill(Island, FVector(-700, -700, 0), 500, 80, GrassMeadow, RockWarm);
+	AYJJProp* Island = BuildIsland(C, 2000.f, IslandColor::GrassMeadow, IslandColor::RockWarm, 2, true, false);
+	AddHill(Island, FVector(500, 300, 0), 900, 180, IslandColor::GrassMeadow, IslandColor::RockWarm);
+	AddHill(Island, FVector(-700, -700, 0), 500, 80, IslandColor::GrassMeadow, IslandColor::RockWarm);
 	static const TArray<FLinearColor> Flowers = { FLinearColor(1.f, 0.5f, 0.6f), FLinearColor(1.f, 0.85f, 0.25f), FLinearColor(0.75f, 0.6f, 1.f), FLinearColor(1.f, 1.f, 1.f) };
-	Decorate(Island, 2000.f, GrassMeadow, 2, 360, Flowers);
+	Decorate(Island, 2000.f, IslandColor::GrassMeadow, 2, 360, Flowers);
 
-	AddTree(OnGround(C + FVector(-1200, 900, 0)), 1.3f, 11, LeafPink);
-	AddTree(OnGround(C + FVector(1400, -900, 0)), 1.1f, 12, LeafBright);
-	AddTree(OnGround(C + FVector(-300, -1500, 0)), 0.9f, 13, LeafPink);
-	AddRock(OnGround(C + FVector(1300, 1100, 0)), 200, 14, RockWarm);
+	AddTree(OnGround(C + FVector(-1200, 900, 0)), 1.3f, 11, IslandColor::LeafPink);
+	AddTree(OnGround(C + FVector(1400, -900, 0)), 1.1f, 12, IslandColor::LeafBright);
+	AddTree(OnGround(C + FVector(-300, -1500, 0)), 0.9f, 13, IslandColor::LeafPink);
+	AddRock(OnGround(C + FVector(1300, 1100, 0)), 200, 14, IslandColor::RockWarm);
+
+	// AI 풍차 (언덕 북쪽 가장자리). 밑동만 밟히는 원기둥으로 막는다
+	if (UStaticMesh* Windmill = YJJShapes::AIMesh(TEXT("SM_Windmill")))
+	{
+		const FVector Base = OnGround(C + FVector(-250, 1500, 0), -20.f);
+		AYJJProp* Mill = NewProp(Base, FRotator(0, -110, 0));
+		YJJShapes::Add(Mill, Mill->GetRootComponent(), EYJJShape::Cylinder, FVector(0, 0, 250), FVector(420, 420, 500), nullptr, true)->SetVisibility(false);
+		YJJShapes::AddAI(Mill, Mill->GetRootComponent(), Windmill, FVector::ZeroVector, 900.f, true);
+	}
 
 	AYJJLantern* Lantern = SpawnDeferred<AYJJLantern>(GetWorld(), OnGround(C + FVector(500, 300, 0)), FRotator(0, 200, 0));
 	Lantern->Setup(TEXT("들꽃 언덕의 등불"), FLinearColor(1.f, 0.6f, 0.7f));
@@ -677,20 +684,34 @@ void AYJJWorldBuilder::BuildCrystal()
 {
 	// 수정섬: 푸른 수정이 빛나는 섬. 움직이는 발판 두 개를 건너 도착
 	const FVector C = W(-2700, 7700, 1400);
-	AYJJProp* Island = BuildIsland(C, 1800.f, GrassCrystal, RockCool, 3, true, false);
-	AddHill(Island, FVector(-300, 400, 0), 800, 120, GrassCrystal, RockCool);
+	AYJJProp* Island = BuildIsland(C, 1800.f, IslandColor::GrassCrystal, IslandColor::RockCool, 3, true, false);
+	AddHill(Island, FVector(-300, 400, 0), 800, 120, IslandColor::GrassCrystal, IslandColor::RockCool);
 	static const TArray<FLinearColor> Flowers = { FLinearColor(0.6f, 0.9f, 1.f), FLinearColor(0.85f, 0.75f, 1.f) };
-	Decorate(Island, 1800.f, GrassCrystal, 3, 160, Flowers);
+	Decorate(Island, 1800.f, IslandColor::GrassCrystal, 3, 160, Flowers);
 
 	const FLinearColor Cyan(0.35f, 0.85f, 1.f);
 	const FLinearColor Violet(0.7f, 0.5f, 1.f);
 	AddCrystals(OnGround(C + FVector(-900, 900, 0)), 700.f, Cyan, 1, true);
 	AddCrystals(OnGround(C + FVector(900, 700, 0)), 520.f, Violet, 2, true);
-	AddCrystals(OnGround(C + FVector(-1100, -600, 0)), 420.f, Cyan, 3, false);
-	AddCrystals(OnGround(C + FVector(700, -900, 0)), 380.f, Violet, 4, false);
+	// 작은 수정 둘은 AI 수정 무리로 (없으면 도형 수정)
+	if (UStaticMesh* Cluster = YJJShapes::AIMesh(TEXT("SM_CrystalCluster")))
+	{
+		const FVector Spots[] = { FVector(-1100, -600, 0), FVector(700, -900, 0) };
+		for (int32 i = 0; i < 2; ++i)
+		{
+			AYJJProp* P = NewProp(OnGround(C + Spots[i], -30.f), FRotator(0, 70.f + i * 140.f, 0));
+			YJJShapes::Add(P, P->GetRootComponent(), EYJJShape::Cylinder, FVector(0, 0, 150), FVector(380, 380, 300), nullptr, true)->SetVisibility(false);
+			YJJShapes::AddAI(P, P->GetRootComponent(), Cluster, FVector::ZeroVector, i == 0 ? 650.f : 560.f, true);
+		}
+	}
+	else
+	{
+		AddCrystals(OnGround(C + FVector(-1100, -600, 0)), 420.f, Cyan, 3, false);
+		AddCrystals(OnGround(C + FVector(700, -900, 0)), 380.f, Violet, 4, false);
+	}
 	AddCrystals(OnGround(C + FVector(100, 1300, 0)), 600.f, Cyan, 5, true);
-	AddPine(OnGround(C + FVector(1300, -200, 0)), 1.1f, LeafDeep);
-	AddPine(OnGround(C + FVector(-1400, 200, 0)), 1.3f, LeafDeep);
+	AddPine(OnGround(C + FVector(1300, -200, 0)), 1.1f, IslandColor::LeafDeep);
+	AddPine(OnGround(C + FVector(-1400, 200, 0)), 1.3f, IslandColor::LeafDeep);
 
 	// 수정 아치 안의 등불
 	AddArch(OnGround(C + FVector(-300, 400, 0)), 30.f, 520.f, 460.f, FLinearColor(0.7f, 0.78f, 0.9f));
@@ -712,7 +733,7 @@ void AYJJWorldBuilder::BuildCrystal()
 	AYJJMovingPlatform* B = SpawnDeferred<AYJJMovingPlatform>(GetWorld(), W(-1900, 5250, 700));
 	B->Setup(FVector(0, 0, 750), 5.f, 240.f, 0.25f);
 	Finish(B);
-	AddStone(W(-2150, 6000, 1380), 200.f, GrassCrystal, RockCool, 31);
+	AddStone(W(-2150, 6000, 1380), 200.f, IslandColor::GrassCrystal, IslandColor::RockCool, 31);
 	AddStardustLine(W(-1600, 3900, 900), W(-700, 3900, 900), 3);
 	AddStardustLine(W(-1900, 5250, 1100), W(-1900, 5250, 1700), 3);
 
@@ -720,7 +741,7 @@ void AYJJWorldBuilder::BuildCrystal()
 	AddStardustRing(C + FVector(0, 0, -900), 2100.f, 6);
 
 	// 보물: 북쪽 끝 너머 떠 있는 작은 바위 (섬 끝에서 활공)
-	AddStone(W(-2600, 10100, 1150), 260.f, GrassCrystal, RockCool, 77);
+	AddStone(W(-2600, 10100, 1150), 260.f, IslandColor::GrassCrystal, IslandColor::RockCool, 77);
 	AddChest(W(-2600, 10100, 1150), 180.f);
 
 	AddZone(TEXT("수정섬"), TEXT("잠든 별빛이 자라는 섬"), C, 1900.f);
@@ -730,9 +751,9 @@ void AYJJWorldBuilder::BuildWaterfall()
 {
 	// 폭포 정원: 높은 곳. 계단식 절벽 위 호수에서 폭포가 하늘 아래로 쏟아진다
 	const FVector C = W(-7700, -1900, 2800);
-	AYJJProp* Island = BuildIsland(C, 2100.f, GrassWater, RockWarm, 4, true, false);
+	AYJJProp* Island = BuildIsland(C, 2100.f, IslandColor::GrassWater, IslandColor::RockWarm, 4, true, false);
 	USceneComponent* R = Island->GetRootComponent();
-	UMaterialInterface* Cliff = YJJShapes::Surface(Island, GrassWater, RockWarm);
+	UMaterialInterface* Cliff = YJJShapes::Surface(Island, IslandColor::GrassWater, IslandColor::RockWarm);
 	// 계단식 대지 (점프로 오른다: 단 높이 160 이하)
 	YJJShapes::Add(Island, R, EYJJShape::Cylinder, FVector(-500, -300, 75), FVector(2000, 2000, 150), Cliff, true);
 	YJJShapes::Add(Island, R, EYJJShape::Cylinder, FVector(-700, -400, 225), FVector(1400, 1400, 150), Cliff, true);
@@ -747,15 +768,15 @@ void AYJJWorldBuilder::BuildWaterfall()
 	YJJShapes::Add(Island, R, EYJJShape::Cylinder, FVector(600, 400, 8), FVector(1300, 1100, 10), YJJShapes::Water(Island, 0.4f, 0.85f), false);
 	YJJShapes::Add(Island, R, EYJJShape::Cube, FVector(1500, 450, 4), FVector(900, 420, 10), YJJShapes::Water(Island, 1.2f, 0.85f), false);
 	static const TArray<FLinearColor> Flowers = { FLinearColor(1.f, 1.f, 1.f), FLinearColor(0.6f, 0.8f, 1.f), FLinearColor(1.f, 0.85f, 0.3f) };
-	Decorate(Island, 2100.f, GrassWater, 4, 220, Flowers);
+	Decorate(Island, 2100.f, IslandColor::GrassWater, 4, 220, Flowers);
 	AddWaterfall(C + FVector(2000, 450, 6), 0.f, 380.f, 3600.f);
 	AddWaterfall(C + FVector(-1100, 1500, 380), 120.f, 200.f, 1800.f);
 
-	AddTree(OnGround(C + FVector(900, -1100, 0)), 1.2f, 21, LeafBright);
-	AddTree(OnGround(C + FVector(-1500, 800, 0)), 1.f, 22, LeafGold);
-	AddPine(OnGround(C + FVector(200, -1500, 0)), 1.2f, LeafDeep);
-	AddRock(OnGround(C + FVector(1200, 1200, 0)), 240, 23, RockWarm);
-	AddPillar(OnGround(C + FVector(-850, -500, 0)) + FVector(400, 0, 0), 380, 45, true, Marble);
+	AddTree(OnGround(C + FVector(900, -1100, 0)), 1.2f, 21, IslandColor::LeafBright);
+	AddTree(OnGround(C + FVector(-1500, 800, 0)), 1.f, 22, IslandColor::LeafGold);
+	AddPine(OnGround(C + FVector(200, -1500, 0)), 1.2f, IslandColor::LeafDeep);
+	AddRock(OnGround(C + FVector(1200, 1200, 0)), 240, 23, IslandColor::RockWarm);
+	AddPillar(OnGround(C + FVector(-850, -500, 0)) + FVector(400, 0, 0), 380, 45, true, IslandColor::Marble);
 
 	AYJJLantern* Lantern = SpawnDeferred<AYJJLantern>(GetWorld(), OnGround(C + FVector(-850, -500, 0)), FRotator(0, 20, 0));
 	Lantern->Setup(TEXT("폭포 정원의 등불"), FLinearColor(0.45f, 0.75f, 1.f));
@@ -782,16 +803,16 @@ void AYJJWorldBuilder::BuildForest()
 {
 	// 고목의 숲: 낮은 곳. 거대한 고목을 나선 발판으로 올라 꼭대기 등불을 켠다
 	const FVector C = W(2500, -8200, -900);
-	AYJJProp* Island = BuildIsland(C, 2300.f, GrassForest, RockDark, 5, true, false);
+	AYJJProp* Island = BuildIsland(C, 2300.f, IslandColor::GrassForest, IslandColor::RockDark, 5, true, false);
 	static const TArray<FLinearColor> Flowers = { FLinearColor(1.f, 0.9f, 0.5f), FLinearColor(0.95f, 0.6f, 0.4f) };
-	Decorate(Island, 2300.f, GrassForest, 5, 150, Flowers);
+	Decorate(Island, 2300.f, IslandColor::GrassForest, 5, 150, Flowers);
 
 	// 고목
 	AYJJProp* Tree = NewProp(C);
 	USceneComponent* R = Tree->GetRootComponent();
 	UMaterialInterface* Bark = YJJShapes::Surface(Tree, FLinearColor(0.5f, 0.42f, 0.3f), FLinearColor(0.42f, 0.3f, 0.22f));
 	UMaterialInterface* Leaf = YJJShapes::Surface(Tree, FLinearColor(0.45f, 0.78f, 0.35f), FLinearColor(0.2f, 0.48f, 0.3f), 0.03f, 0.9f);
-	UMaterialInterface* Moss = YJJShapes::Surface(Tree, GrassForest, FLinearColor(0.42f, 0.32f, 0.24f));
+	UMaterialInterface* Moss = YJJShapes::Surface(Tree, IslandColor::GrassForest, FLinearColor(0.42f, 0.32f, 0.24f));
 	YJJShapes::Add(Tree, R, EYJJShape::Cylinder, FVector(0, 0, 1300), FVector(560, 560, 2600), Bark, true);
 	YJJShapes::Add(Tree, R, EYJJShape::Cone, FVector(0, 0, 200), FVector(1100, 1100, 400), Bark, true);
 	for (int32 i = 0; i < 5; ++i)
@@ -827,7 +848,7 @@ void AYJJWorldBuilder::BuildForest()
 	for (int32 i = 0; i < 8; ++i)
 	{
 		const float A = i * 0.8f;
-		YJJShapes::Add(Tree, R, EYJJShape::Sphere, FVector(FMath::Cos(A) * 650.f, FMath::Sin(A) * 650.f, 2800.f - (i % 3) * 120.f), FVector(50, 50, 60), YJJShapes::Solid(Tree, LeafGold, 3.f), false);
+		YJJShapes::Add(Tree, R, EYJJShape::Sphere, FVector(FMath::Cos(A) * 650.f, FMath::Sin(A) * 650.f, 2800.f - (i % 3) * 120.f), FVector(50, 50, 60), YJJShapes::Solid(Tree, IslandColor::LeafGold, 3.f), false);
 	}
 
 	AYJJLantern* Lantern = SpawnDeferred<AYJJLantern>(GetWorld(), C + FVector(250, 0, 2650), FRotator(0, 180, 0));
@@ -844,14 +865,14 @@ void AYJJWorldBuilder::BuildForest()
 	{
 		if (T[2] % 2)
 		{
-			AddPine(OnGround(C + FVector(T[0], T[1], 0)), 1.3f + (T[2] % 3) * 0.2f, LeafDeep);
+			AddPine(OnGround(C + FVector(T[0], T[1], 0)), 1.3f + (T[2] % 3) * 0.2f, IslandColor::LeafDeep);
 		}
 		else
 		{
-			AddTree(OnGround(C + FVector(T[0], T[1], 0)), 1.2f, 30 + T[2], LeafGold);
+			AddTree(OnGround(C + FVector(T[0], T[1], 0)), 1.2f, 30 + T[2], IslandColor::LeafGold);
 		}
 	}
-	AddRock(OnGround(C + FVector(1000, 700, 0)), 260, 41, RockDark);
+	AddRock(OnGround(C + FVector(1000, 700, 0)), 260, 41, IslandColor::RockDark);
 
 	for (int32 i = 0; i < 4; ++i)
 	{
@@ -877,13 +898,13 @@ void AYJJWorldBuilder::BuildRuins()
 {
 	// 하늘 유적: 가장 높은 곳. 무너진 신전 탑을 점프로 올라 꼭대기 등불
 	const FVector C = W(9600, -5300, 4300);
-	AYJJProp* Island = BuildIsland(C, 1900.f, GrassRuins, RockCool, 6, true, false);
+	AYJJProp* Island = BuildIsland(C, 1900.f, IslandColor::GrassRuins, IslandColor::RockCool, 6, true, false);
 	static const TArray<FLinearColor> Flowers = { FLinearColor(1.f, 0.85f, 0.3f), FLinearColor(1.f, 1.f, 1.f) };
-	Decorate(Island, 1900.f, GrassRuins, 6, 120, Flowers);
+	Decorate(Island, 1900.f, IslandColor::GrassRuins, 6, 120, Flowers);
 
 	AYJJProp* Temple = NewProp(C);
 	USceneComponent* R = Temple->GetRootComponent();
-	UMaterialInterface* Stone = YJJShapes::Surface(Temple, Marble, FLinearColor(0.7f, 0.7f, 0.74f));
+	UMaterialInterface* Stone = YJJShapes::Surface(Temple, IslandColor::Marble, FLinearColor(0.7f, 0.7f, 0.74f));
 	UMaterialInterface* Gold = YJJShapes::Solid(Temple, FLinearColor(0.9f, 0.68f, 0.28f), 0.15f, 0.35f);
 	// 바닥 타일
 	YJJShapes::Add(Temple, R, EYJJShape::Cube, FVector(0, 0, 15), FVector(1800, 1800, 30), Stone, true);
@@ -918,7 +939,7 @@ void AYJJWorldBuilder::BuildRuins()
 	for (int32 i = 0; i < 6; ++i)
 	{
 		const float A = i * (TWO_PI / 6.f) + 0.2f;
-		AddPillar(OnGround(C + FVector(FMath::Cos(A) * 1350.f, FMath::Sin(A) * 1350.f, 0)), 300.f + (i % 3) * 180.f, 50.f, i % 2 == 0, Marble);
+		AddPillar(OnGround(C + FVector(FMath::Cos(A) * 1350.f, FMath::Sin(A) * 1350.f, 0)), 300.f + (i % 3) * 180.f, 50.f, i % 2 == 0, IslandColor::Marble);
 	}
 	for (int32 i = 0; i < 2; ++i)
 	{
@@ -951,8 +972,8 @@ void AYJJWorldBuilder::BuildVista()
 	};
 	for (const FFar& F : Far)
 	{
-		const FLinearColor Grass = (F.Seed % 2) ? GrassMeadow : GrassForest;
-		BuildIsland(W(F.X, F.Y, F.Z), F.R, Grass, RockWarm, F.Seed, false, false);
+		const FLinearColor Grass = (F.Seed % 2) ? IslandColor::GrassMeadow : IslandColor::GrassForest;
+		BuildIsland(W(F.X, F.Y, F.Z), F.R, Grass, IslandColor::RockWarm, F.Seed, false, false);
 		if (F.bTrees)
 		{
 			// 멀리 보이는 실루엣만 (큰 나무 몇 그루)
@@ -960,7 +981,7 @@ void AYJJWorldBuilder::BuildVista()
 			{
 				const float A = YJJShapes::Hash(F.Seed * 7 + i) * TWO_PI;
 				const float D = YJJShapes::Hash(F.Seed * 9 + i) * F.R * 0.7f;
-				AddTree(W(F.X + FMath::Cos(A) * D, F.Y + FMath::Sin(A) * D, F.Z), 3.f + YJJShapes::Hash(i) * 2.f, F.Seed + i, i % 2 ? LeafPink : LeafBright);
+				AddTree(W(F.X + FMath::Cos(A) * D, F.Y + FMath::Sin(A) * D, F.Z), 3.f + YJJShapes::Hash(i) * 2.f, F.Seed + i, i % 2 ? IslandColor::LeafPink : IslandColor::LeafBright);
 			}
 		}
 		// 큰 섬 일부엔 폭포
@@ -972,7 +993,7 @@ void AYJJWorldBuilder::BuildVista()
 
 	// 하늘에 떠 있는 거대한 고리 유적
 	AYJJProp* Ring = NewProp(W(-14000, 4000, 6000), FRotator(0, 30, 70));
-	UMaterialInterface* RingMat = YJJShapes::Surface(Ring, Marble, FLinearColor(0.7f, 0.72f, 0.78f), 0.1f);
+	UMaterialInterface* RingMat = YJJShapes::Surface(Ring, IslandColor::Marble, FLinearColor(0.7f, 0.72f, 0.78f), 0.1f);
 	for (int32 i = 0; i < 24; ++i)
 	{
 		if (i == 7 || i == 8 || i == 16)
@@ -1010,9 +1031,21 @@ void AYJJWorldBuilder::BuildVista()
 			Comp->RegisterComponent();
 			Isle->AddInstanceComponent(Comp);
 			// 바닥 아래로 늘어진 바위 뿌리 (섬처럼 보이게)
-			YJJShapes::Add(Isle, Isle->GetRootComponent(), EYJJShape::Cone, FVector(0, 0, -B.BoxExtent.Z * S - I.Width * 0.25f), FVector(I.Width * 0.75f, I.Width * 0.75f, I.Width * 0.55f), YJJShapes::Solid(Isle, RockDark), false, FRotator(180, 0, 0));
+			YJJShapes::Add(Isle, Isle->GetRootComponent(), EYJJShape::Cone, FVector(0, 0, -B.BoxExtent.Z * S - I.Width * 0.25f), FVector(I.Width * 0.75f, I.Width * 0.75f, I.Width * 0.55f), YJJShapes::Solid(Isle, IslandColor::RockDark), false, FRotator(180, 0, 0));
 		}
 		UE_LOG(LogYJJFantasy, Log, TEXT("AI 성소 섬 %d개 배치 (메시 폭 %.0f)"), UE_ARRAY_COUNT(AIIslands), MeshWidth);
+	}
+
+	// 하늘 고래 둘: 하나는 섬들을 크게 감싸 돌고, 하나는 더 멀리서 반대쪽으로
+	{
+		struct FWhale { float Radius, Z, Period, Length, Start; };
+		const FWhale Whales[] = { { 13000, 3200, 170, 4200, 200 }, { 24000, 7500, 260, 6500, 20 } };
+		for (const FWhale& Wh : Whales)
+		{
+			AYJJSkyWhale* Whale = SpawnDeferred<AYJJSkyWhale>(GetWorld(), W(0, 0, Wh.Z));
+			Whale->Setup(W(0, 0, Wh.Z), Wh.Radius, Wh.Period, Wh.Length, Wh.Start);
+			Finish(Whale);
+		}
 	}
 
 	// 먼 거대 수정
@@ -1027,8 +1060,8 @@ void AYJJWorldBuilder::BuildVista()
 		const float Z = -2000.f + YJJShapes::Hash(i * 23) * 9000.f;
 		AYJJProp* Rock = NewProp(W(FMath::Cos(A) * D, FMath::Sin(A) * D, Z), FRotator(YJJShapes::Hash(i) * 40.f, YJJShapes::Hash(i + 1) * 360.f, 0));
 		const float S = 150.f + YJJShapes::Hash(i * 29) * 500.f;
-		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Cylinder, FVector::ZeroVector, FVector(S * 2.f, S * 2.f, S * 0.4f), YJJShapes::Surface(Rock, GrassHub, RockWarm), false);
-		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Cone, FVector(0, 0, -S * 0.6f), FVector(S * 1.8f, S * 1.8f, S), YJJShapes::Solid(Rock, RockWarm), false, FRotator(180, 0, 0));
+		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Cylinder, FVector::ZeroVector, FVector(S * 2.f, S * 2.f, S * 0.4f), YJJShapes::Surface(Rock, IslandColor::GrassHub, IslandColor::RockWarm), false);
+		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Cone, FVector(0, 0, -S * 0.6f), FVector(S * 1.8f, S * 1.8f, S), YJJShapes::Solid(Rock, IslandColor::RockWarm), false, FRotator(180, 0, 0));
 	}
 
 	// 몽실몽실한 뭉게구름: 섬 사이와 아래에 떠 있다 (구 여러 개를 뭉쳐서)

@@ -61,6 +61,9 @@ public:
 	/** 섬들의 기준 높이 (구름 바다 위 3km) */
 	static constexpr float BaseZ = 300000.f;
 
+	/** 섬 좌표 (BaseZ 기준) -> 월드 좌표 */
+	static FVector W(float X, float Y, float Z) { return FVector(X, Y, BaseZ + Z); }
+
 	/** 영웅 시작 위치 */
 	static FVector GetSpawnLocation();
 	static float GetSpawnYaw();

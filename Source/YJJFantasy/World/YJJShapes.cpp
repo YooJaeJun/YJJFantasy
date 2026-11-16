@@ -289,6 +289,39 @@ bool YJJShapes::RayCast(const FCollider& Collider, const FVector& Start, const F
 	return true;
 }
 
+UStaticMesh* YJJShapes::AIMesh(const TCHAR* Name)
+{
+	// build_content.py(Interchange)가 /AI/<이름>/<이름>/StaticMeshes/<이름> 으로 임포트한다
+	const FString Path = FString::Printf(TEXT("%s/%s/%s/StaticMeshes/%s.%s"), YJJAssetPaths::AIModelDir, Name, Name, Name, Name);
+	return LoadObject<UStaticMesh>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
+}
+
+UStaticMeshComponent* YJJShapes::AddAI(AActor* Owner, USceneComponent* Parent, UStaticMesh* AI, const FVector& Location, float Size,
+	bool bBottomPivot, const FRotator& Rotation)
+{
+	check(Owner && AI);
+	const FBoxSphereBounds B = AI->GetBounds();
+	const float Width = FMath::Max(1.f, 2.f * FMath::Max(B.BoxExtent.X, B.BoxExtent.Y));
+	const float S = Size / Width;
+	const FVector Pivot = bBottomPivot ? B.Origin - FVector(0, 0, B.BoxExtent.Z) : B.Origin;
+
+	UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(Owner);
+	Comp->SetStaticMesh(AI);
+	Comp->SetMobility(Parent ? Parent->Mobility.GetValue() : EComponentMobility::Movable);
+	if (Parent)
+	{
+		Comp->SetupAttachment(Parent);
+	}
+	Comp->SetRelativeScale3D(FVector(S));
+	Comp->SetRelativeRotation(Rotation);
+	Comp->SetRelativeLocation(Location - Rotation.RotateVector(Pivot * S));
+	Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Comp->SetCanEverAffectNavigation(false);
+	Comp->RegisterComponent();
+	Owner->AddInstanceComponent(Comp);
+	return Comp;
+}
+
 UInstancedStaticMeshComponent* YJJShapes::AddInstanced(AActor* Owner, USceneComponent* Parent, EYJJShape Shape, UMaterialInterface* Material, bool bCollide)
 {
 	check(Owner);

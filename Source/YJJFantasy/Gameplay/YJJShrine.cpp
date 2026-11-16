@@ -15,13 +15,16 @@
 
 namespace
 {
-	const FLinearColor Marble(0.82f, 0.79f, 0.74f);
-	const FLinearColor MarbleSide(0.66f, 0.66f, 0.7f);
-	const FLinearColor Gold(0.85f, 0.62f, 0.22f);
-	const FLinearColor CrystalColor(0.35f, 0.85f, 1.f);
-	constexpr int32 RuneCount = 5;
-	constexpr float RuneRadius = 380.f;
-	constexpr float TopZ = 120.f;
+	namespace ShrineLook
+	{
+		const FLinearColor Marble(0.82f, 0.79f, 0.74f);
+		const FLinearColor MarbleSide(0.66f, 0.66f, 0.7f);
+		const FLinearColor Gold(0.85f, 0.62f, 0.22f);
+		const FLinearColor CrystalColor(0.35f, 0.85f, 1.f);
+		constexpr int32 RuneCount = 5;
+		constexpr float RuneRadius = 380.f;
+		constexpr float TopZ = 120.f;
+	}
 }
 
 AYJJShrine::AYJJShrine()
@@ -36,14 +39,14 @@ void AYJJShrine::BeginPlay()
 	Super::BeginPlay();
 	USceneComponent* R = RootComponent;
 
-	UMaterialInterface* MarbleMat = YJJShapes::Surface(this, Marble, MarbleSide);
-	UMaterialInterface* GoldMat = YJJShapes::Solid(this, Gold, 0.f, 0.35f);
+	UMaterialInterface* MarbleMat = YJJShapes::Surface(this, ShrineLook::Marble, ShrineLook::MarbleSide);
+	UMaterialInterface* GoldMat = YJJShapes::Solid(this, ShrineLook::Gold, 0.f, 0.35f);
 
 	// 3단 원형 제단 (한 단 40cm: 걸어서 올라갈 수 있다)
 	YJJShapes::Add(this, R, EYJJShape::Cylinder, FVector(0, 0, 20), FVector(1900, 1900, 40), MarbleMat, true);
 	YJJShapes::Add(this, R, EYJJShape::Cylinder, FVector(0, 0, 60), FVector(1500, 1500, 40), MarbleMat, true);
 	YJJShapes::Add(this, R, EYJJShape::Cylinder, FVector(0, 0, 100), FVector(1100, 1100, 40), MarbleMat, true);
-	YJJShapes::Add(this, R, EYJJShape::Cylinder, FVector(0, 0, TopZ + 2.f), FVector(1060, 1060, 4), GoldMat, false);
+	YJJShapes::Add(this, R, EYJJShape::Cylinder, FVector(0, 0, ShrineLook::TopZ + 2.f), FVector(1060, 1060, 4), GoldMat, false);
 
 	// 둘레 기둥 8개 (두 개는 부서짐) + 위를 잇는 들보
 	for (int32 i = 0; i < 8; ++i)
@@ -85,18 +88,18 @@ void AYJJShrine::BeginPlay()
 	}
 
 	// 등불 수만큼 룬 석판. 등불이 켜지면 그 색으로 빛난다
-	for (int32 i = 0; i < RuneCount; ++i)
+	for (int32 i = 0; i < ShrineLook::RuneCount; ++i)
 	{
-		const float A = i * (TWO_PI / RuneCount) + HALF_PI;
+		const float A = i * (TWO_PI / ShrineLook::RuneCount) + HALF_PI;
 		UMaterialInstanceDynamic* MID = YJJShapes::Solid(this, FLinearColor(0.3f, 0.32f, 0.38f), 0.f, 0.4f);
 		RuneMIDs.Add(MID);
-		YJJShapes::Add(this, R, EYJJShape::Cube, FVector(FMath::Cos(A) * RuneRadius, FMath::Sin(A) * RuneRadius, TopZ + 8.f), FVector(150, 90, 16), MID, false,
+		YJJShapes::Add(this, R, EYJJShape::Cube, FVector(FMath::Cos(A) * ShrineLook::RuneRadius, FMath::Sin(A) * ShrineLook::RuneRadius, ShrineLook::TopZ + 8.f), FVector(150, 90, 16), MID, false,
 			FRotator(0, FMath::RadiansToDegrees(A), 0));
 	}
 
 	// 가운데 받침대
-	YJJShapes::Add(this, R, EYJJShape::Cylinder, FVector(0, 0, TopZ + 60.f), FVector(300, 300, 120), MarbleMat, true);
-	YJJShapes::Add(this, R, EYJJShape::Cylinder, FVector(0, 0, TopZ + 125.f), FVector(340, 340, 14), GoldMat, false);
+	YJJShapes::Add(this, R, EYJJShape::Cylinder, FVector(0, 0, ShrineLook::TopZ + 60.f), FVector(300, 300, 120), MarbleMat, true);
+	YJJShapes::Add(this, R, EYJJShape::Cylinder, FVector(0, 0, ShrineLook::TopZ + 125.f), FVector(340, 340, 14), GoldMat, false);
 
 	// 떠 있는 수정 (원뿔 두 개 = 팔면체)
 	CrystalPivot = NewObject<USceneComponent>(this);
@@ -115,7 +118,7 @@ void AYJJShrine::BeginPlay()
 		Shards.Add(Cast<UStaticMeshComponent>(ShardPivot));
 	}
 
-	AuraMID = YJJShapes::Glow(this, CrystalColor, 0.2f, 0.05f, 1.f);
+	AuraMID = YJJShapes::Glow(this, ShrineLook::CrystalColor, 0.2f, 0.05f, 1.f);
 	Aura = YJJShapes::Add(this, CrystalPivot, EYJJShape::Sphere, FVector::ZeroVector, FVector(520, 520, 620), AuraMID, false);
 
 	BeamMID = YJJShapes::Glow(this, FLinearColor(0.7f, 0.95f, 1.f), 0.f, 0.3f, 1.5f);
@@ -139,7 +142,7 @@ void AYJJShrine::BeginPlay()
 	Light->SetIntensityUnits(ELightUnits::Candelas);
 	Light->SetIntensity(80.f);
 	Light->SetAttenuationRadius(3500.f);
-	Light->SetLightColor(CrystalColor);
+	Light->SetLightColor(ShrineLook::CrystalColor);
 	Light->SetCastShadows(false);
 	Light->RegisterComponent();
 	AddInstanceComponent(Light);
@@ -311,7 +314,7 @@ void AYJJShrine::Tick(float DeltaTime)
 		}
 	}
 	CrystalPivot->AddLocalRotation(FRotator(0, Spin * DeltaTime, 0));
-	const FLinearColor Body = bAwake ? CrystalColor : FLinearColor(0.42f, 0.5f, 0.6f);
+	const FLinearColor Body = bAwake ? ShrineLook::CrystalColor : FLinearColor(0.42f, 0.5f, 0.6f);
 	CrystalMID->SetVectorParameterValue(TEXT("TopColor"), Body);
 	CrystalMID->SetVectorParameterValue(TEXT("SideColor"), Body);
 	CrystalMID->SetScalarParameterValue(TEXT("Emissive"), Glow);
