@@ -4,8 +4,10 @@
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/YJJAdventureSubsystem.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "YJJAssetPaths.h"
 #include "GameFramework/PlayerController.h"
 #include "Gameplay/YJJChest.h"
 #include "Gameplay/YJJLantern.h"
@@ -981,6 +983,37 @@ void AYJJWorldBuilder::BuildVista()
 		YJJShapes::Add(Ring, Ring->GetRootComponent(), EYJJShape::Cube, FVector(FMath::Cos(A) * 4000.f, FMath::Sin(A) * 4000.f, 0), FVector(1100, 500, 400), RingMat, false, FRotator(0, FMath::RadiansToDegrees(A) + 90.f, 0));
 	}
 	YJJShapes::Add(Ring, Ring->GetRootComponent(), EYJJShape::Sphere, FVector::ZeroVector, FVector(900, 900, 900), YJJShapes::Glow(Ring, FLinearColor(0.5f, 0.85f, 1.f), 1.5f, 0.6f, 1.f), false);
+
+	// AI로 만든 떠 있는 성소 섬 (TRELLIS.2). 크기는 메시 경계로 맞춘다
+	if (UStaticMesh* ShrineMesh = LoadObject<UStaticMesh>(nullptr, YJJAssetPaths::AIFloatingShrine))
+	{
+		struct FAIIsland { float X, Y, Z, Width, Yaw; };
+		const FAIIsland AIIslands[] = {
+			{ 5200, 9200, 2400, 3200, 200 },
+			{ -15500, -5000, 3800, 6000, 70 },
+			{ 16000, 15000, 5200, 4800, 240 },
+			{ -9000, 18000, -1800, 4000, 140 },
+		};
+		const FBoxSphereBounds B = ShrineMesh->GetBounds();
+		const float MeshWidth = FMath::Max(1.f, 2.f * FMath::Max(B.BoxExtent.X, B.BoxExtent.Y));
+		for (const FAIIsland& I : AIIslands)
+		{
+			AYJJProp* Isle = NewProp(W(I.X, I.Y, I.Z), FRotator(0, I.Yaw, 0));
+			UStaticMeshComponent* Comp = NewObject<UStaticMeshComponent>(Isle);
+			Comp->SetMobility(EComponentMobility::Static);
+			Comp->SetStaticMesh(ShrineMesh);
+			const float S = I.Width / MeshWidth;
+			Comp->SetRelativeScale3D(FVector(S));
+			Comp->SetRelativeLocation(-B.Origin * S);
+			Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Comp->SetupAttachment(Isle->GetRootComponent());
+			Comp->RegisterComponent();
+			Isle->AddInstanceComponent(Comp);
+			// 바닥 아래로 늘어진 바위 뿌리 (섬처럼 보이게)
+			YJJShapes::Add(Isle, Isle->GetRootComponent(), EYJJShape::Cone, FVector(0, 0, -B.BoxExtent.Z * S - I.Width * 0.25f), FVector(I.Width * 0.75f, I.Width * 0.75f, I.Width * 0.55f), YJJShapes::Solid(Isle, RockDark), false, FRotator(180, 0, 0));
+		}
+		UE_LOG(LogYJJFantasy, Log, TEXT("AI 성소 섬 %d개 배치 (메시 폭 %.0f)"), UE_ARRAY_COUNT(AIIslands), MeshWidth);
+	}
 
 	// 먼 거대 수정
 	AddCrystals(W(20000, 24000, 3000), 9000.f, FLinearColor(0.45f, 0.75f, 1.f), 9, false);

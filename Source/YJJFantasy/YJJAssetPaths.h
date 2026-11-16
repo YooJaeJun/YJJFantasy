@@ -21,6 +21,9 @@ namespace YJJAssetPaths
 	/** AI로 만든 모델이 임포트되는 폴더 */
 	inline const TCHAR* AIModelDir = TEXT("/Game/YJJFantasy/AI");
 
+	/** TRELLIS.2로 만든 떠 있는 성소 섬 (없으면 배치하지 않는다) */
+	inline const TCHAR* AIFloatingShrine = TEXT("/Game/YJJFantasy/AI/SM_FloatingShrine/SM_FloatingShrine/StaticMeshes/SM_FloatingShrine.SM_FloatingShrine");
+
 	/** HUD 글꼴 (Content 기준). 배민 주아체, SIL OFL 1.1 */
 	inline const TCHAR* GameFontFile = TEXT("YJJFantasy/Fonts/Jua-Regular.ttf");
 }

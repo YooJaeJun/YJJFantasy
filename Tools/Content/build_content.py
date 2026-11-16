@@ -326,6 +326,7 @@ def import_ai_models():
         task.set_editor_property("replace_existing", True)
         task.set_editor_property("save", True)
         asset_tools.import_asset_tasks([task])
+        # Nanite는 이 메시(10만 면, 4개 배치)에선 오히려 느렸다(102 -> 92 FPS). 기본 메시로 둔다
         log(f"AI 모델 {name}: {list(task.get_editor_property('imported_object_paths'))}")
 
 

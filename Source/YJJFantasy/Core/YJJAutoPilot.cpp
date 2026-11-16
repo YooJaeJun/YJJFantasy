@@ -137,6 +137,7 @@ void UYJJAutoPilot::StartTour()
 		{ TEXT("Tour_7_Ruins"), W(8300, -6200, 4420), 35.f, 14.f },
 		{ TEXT("Tour_8_SkyView"), W(-2350, -500, 3900), 0.f, -22.f },
 		{ TEXT("Tour_9_Vista"), W(1500, -2200, 140), 160.f, 4.f },
+		{ TEXT("Tour_10_AIShrine"), W(2600, 5400, 2600), 55.f, -3.f },
 	};
 	Add(3.f, [] {});
 	for (const FShot& S : Shots)

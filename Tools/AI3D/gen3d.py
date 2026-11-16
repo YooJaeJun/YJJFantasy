@@ -80,25 +80,104 @@ def image_to_glb(image_path, out_path, seed, resolution, faces, texture_size):
         api_name="/extract_glb",
     )
     shutil.copyfile(glb, out_path)
+    webp_to_png(out_path)
     log(f"  -> {out_path} ({os.path.getsize(out_path) // 1024} KB)")
+
+
+def webp_to_png(glb_path):
+    """TRELLIS.2는 텍스처를 WebP(EXT_texture_webp)로 넣는데 언리얼 Interchange가 못 읽는다. PNG로 바꿔 다시 쓴다."""
+    import io
+    import json
+    import struct
+
+    from PIL import Image
+
+    with open(glb_path, "rb") as f:
+        data = f.read()
+    magic, version, _length = struct.unpack_from("<4sII", data, 0)
+    if magic != b"glTF":
+        return
+    offset = 12
+    doc, bin_chunk = None, b""
+    while offset < len(data):
+        clen, ctype = struct.unpack_from("<I4s", data, offset)
+        chunk = data[offset + 8:offset + 8 + clen]
+        if ctype == b"JSON":
+            doc = json.loads(chunk)
+        elif ctype == b"BIN\x00":
+            bin_chunk = chunk
+        offset += 8 + clen
+    if doc is None or "EXT_texture_webp" not in doc.get("extensionsUsed", []):
+        return
+
+    views = doc["bufferViews"]
+    blobs = [bin_chunk[v.get("byteOffset", 0):v.get("byteOffset", 0) + v["byteLength"]] for v in views]
+    converted = 0
+    for img in doc.get("images", []):
+        if img.get("mimeType") == "image/webp" and "bufferView" in img:
+            png = io.BytesIO()
+            Image.open(io.BytesIO(blobs[img["bufferView"]])).save(png, "PNG", optimize=False)
+            blobs[img["bufferView"]] = png.getvalue()
+            img["mimeType"] = "image/png"
+            converted += 1
+    for tex in doc.get("textures", []):
+        ext = tex.get("extensions", {})
+        if "EXT_texture_webp" in ext:
+            tex["source"] = ext.pop("EXT_texture_webp")["source"]
+            if not ext:
+                tex.pop("extensions")
+    for key in ("extensionsUsed", "extensionsRequired"):
+        if key in doc:
+            doc[key] = [e for e in doc[key] if e != "EXT_texture_webp"]
+            if not doc[key]:
+                doc.pop(key)
+
+    # 버퍼 뷰를 4바이트 정렬로 다시 이어 붙인다
+    new_bin = bytearray()
+    for v, blob in zip(views, blobs):
+        while len(new_bin) % 4:
+            new_bin.append(0)
+        v["byteOffset"] = len(new_bin)
+        v["byteLength"] = len(blob)
+        v["buffer"] = 0
+        new_bin += blob
+    while len(new_bin) % 4:
+        new_bin.append(0)
+    doc["buffers"] = [{"byteLength": len(new_bin)}]
+
+    js = json.dumps(doc, separators=(",", ":")).encode("utf-8")
+    js += b" " * ((4 - len(js) % 4) % 4)
+    out = struct.pack("<4sII", b"glTF", 2, 12 + 8 + len(js) + 8 + len(new_bin))
+    out += struct.pack("<I4s", len(js), b"JSON") + js
+    out += struct.pack("<I4s", len(new_bin), b"BIN\x00") + bytes(new_bin)
+    with open(glb_path, "wb") as f:
+        f.write(out)
+    log(f"  WebP 텍스처 {converted}개 -> PNG")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", required=True, help="에셋 이름 (예: SM_FloatingShrine)")
-    src = parser.add_mutually_exclusive_group(required=True)
+    src = parser.add_mutually_exclusive_group()
     src.add_argument("--prompt", help="영어 묘사. 공통 스타일이 자동으로 붙는다")
     src.add_argument("--image", help="이미 있는 컨셉 이미지 경로")
     parser.add_argument("--seed", type=int, default=-1, help="-1이면 무작위")
     parser.add_argument("--resolution", type=int, default=1024, choices=[512, 1024, 1536])
-    parser.add_argument("--faces", type=int, default=60000, help="게임용 면 수 목표")
+    parser.add_argument("--faces", type=int, default=100000, help="게임용 면 수 목표 (TRELLIS.2 최소 100000, 임포트 때 Nanite가 처리)")
     parser.add_argument("--texture", type=int, default=2048)
+    parser.add_argument("--fix-only", action="store_true", help="이미 받은 GLB의 텍스처만 PNG로 바꾼다")
     args = parser.parse_args()
 
     out_dir = os.path.join(OUT_ROOT, args.name)
     os.makedirs(out_dir, exist_ok=True)
     concept = os.path.join(out_dir, "concept.png")
     glb = os.path.join(out_dir, f"{args.name}.glb")
+
+    if args.fix_only:
+        webp_to_png(glb)
+        return
+    if not args.prompt and not args.image:
+        parser.error("--prompt 또는 --image가 필요하다")
 
     start = time.time()
     if args.prompt:
