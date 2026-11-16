@@ -50,6 +50,9 @@ namespace YJJShapes
 	/** AI로 만든 모델 (/Game/YJJFantasy/AI/<Name>/...). 임포트 안 됐으면 nullptr */
 	UStaticMesh* AIMesh(const TCHAR* Name);
 
+	/** Blender로 만든 캐릭터용 스태틱 메시 (/Game/YJJFantasy/Characters/<Name>/...). 없으면 nullptr */
+	UStaticMesh* CharacterMesh(const TCHAR* Name);
+
 	/**
 	 * AI 모델을 붙인다 (충돌 없음). Size는 가로로 가장 긴 폭(cm).
 	 * bBottomPivot이면 Location이 모델 바닥 가운데, 아니면 모델 중심이 된다.

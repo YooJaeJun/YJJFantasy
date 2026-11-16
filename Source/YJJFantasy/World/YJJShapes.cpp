@@ -296,6 +296,12 @@ UStaticMesh* YJJShapes::AIMesh(const TCHAR* Name)
 	return LoadObject<UStaticMesh>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
 }
 
+UStaticMesh* YJJShapes::CharacterMesh(const TCHAR* Name)
+{
+	const FString Path = FString::Printf(TEXT("/Game/YJJFantasy/Characters/%s/%s/StaticMeshes/%s.%s"), Name, Name, Name, Name);
+	return LoadObject<UStaticMesh>(nullptr, *Path, nullptr, LOAD_NoWarn | LOAD_Quiet);
+}
+
 UStaticMeshComponent* YJJShapes::AddAI(AActor* Owner, USceneComponent* Parent, UStaticMesh* AI, const FVector& Location, float Size,
 	bool bBottomPivot, const FRotator& Rotation)
 {

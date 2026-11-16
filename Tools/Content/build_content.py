@@ -267,7 +267,8 @@ float nEdge = (1.0 - dot(n0, nL)) + (1.0 - dot(n0, nR)) + (1.0 - dot(n0, nU)) + 
 float edge = saturate(smoothstep(0.08, 0.2, dEdge) + smoothstep(0.6, 1.2, nEdge));
 // 멀리 있는 건 외곽선을 흐리게 (지저분해지지 않게)
 edge *= 1.0 - smoothstep(OutlineFar * 0.5, OutlineFar, depth);
-float3 ink = result * float3(0.28, 0.24, 0.32);
+// 냥코풍: 거의 검은 굵은 먹선 (색이 살짝 남아 탁하지 않게)
+float3 ink = lerp(float3(0.05, 0.045, 0.07), result * 0.25, 0.25);
 return lerp(result, ink, edge * OutlineStrength);
 """
 
@@ -289,9 +290,9 @@ def build_toon_pp():
     base = scene_texture(m, unreal.SceneTextureId.PPI_BASE_COLOR, -1000, 300)
     ref = scalar_param(m, "Ref", 1.0, -1000, 500)
     strength = scalar_param(m, "Strength", 0.65, -1000, 600)
-    thickness = scalar_param(m, "Thickness", 1.2, -1000, 700)
-    outline = scalar_param(m, "OutlineStrength", 0.85, -1000, 800)
-    far = scalar_param(m, "OutlineFar", 9000.0, -1000, 900)
+    thickness = scalar_param(m, "Thickness", 2.2, -1000, 700)
+    outline = scalar_param(m, "OutlineStrength", 0.95, -1000, 800)
+    far = scalar_param(m, "OutlineFar", 14000.0, -1000, 900)
 
     c = custom(m, TOON_CODE, ["C", "D", "N", "B", "Inv", "Ref", "Strength", "Thickness", "OutlineStrength", "OutlineFar"],
                unreal.CustomMaterialOutputType.CMOT_FLOAT3, -500, 0, "Toon")

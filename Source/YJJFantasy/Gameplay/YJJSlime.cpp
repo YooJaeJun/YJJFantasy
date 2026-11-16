@@ -51,6 +51,38 @@ void AYJJSlime::BeginPlay()
 
 	const float S = Size;
 	BodyMID = YJJShapes::Surface(this, YJJShapes::Shade(Color, 1.15f), Color, 0.35f, 0.25f);
+	// 떡무지 (Blender: Tools/Character/make_mob.py). 몸은 섬마다 색을 입히고, 얼굴의 눈꺼풀도 몸 색으로
+	UStaticMesh* MobBody = YJJShapes::CharacterMesh(TEXT("SM_Mob_Body"));
+	UStaticMesh* MobFace = YJJShapes::CharacterMesh(TEXT("SM_Mob_Face"));
+	if (MobBody && MobFace)
+	{
+		const FRotator Front(0.f, -90.f, 0.f);
+		Body = YJJShapes::AddAI(this, BodyPivot, MobBody, FVector::ZeroVector, 150.f * S, true, Front);
+		Body->SetMaterial(0, BodyMID);
+		const float FaceScale = Body->GetRelativeScale3D().X;
+		UStaticMeshComponent* Face = NewObject<UStaticMeshComponent>(this);
+		Face->SetStaticMesh(MobFace);
+		Face->SetupAttachment(BodyPivot);
+		Face->SetRelativeScale3D(FVector(FaceScale));
+		Face->SetRelativeRotation(Front);
+		// 얼굴은 몸과 같은 원점으로 내보냈으니 몸 컴포넌트와 같은 위치에 둔다
+		Face->SetRelativeLocation(Body->GetRelativeLocation());
+		Face->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Face->SetCastShadow(false);
+		Face->RegisterComponent();
+		AddInstanceComponent(Face);
+		const TArray<FName> Slots = Face->GetMaterialSlotNames();
+		for (int32 i = 0; i < Slots.Num(); ++i)
+		{
+			if (Slots[i].ToString().Contains(TEXT("MobBody")))
+			{
+				Face->SetMaterial(i, BodyMID);
+			}
+		}
+		Shadow = YJJShapes::Add(this, RootComponent, EYJJShape::Cylinder, FVector(0, 0, 2), FVector(120 * S, 120 * S, 2), YJJShapes::Solid(this, FLinearColor(0.05f, 0.08f, 0.06f), 0.f), false);
+		BuildPuffs();
+		return;
+	}
 	Body = YJJShapes::Add(this, BodyPivot, EYJJShape::Sphere, FVector(0, 0, 55 * S), FVector(130 * S, 130 * S, 110 * S), BodyMID, false);
 	// 반짝이는 하이라이트
 	YJJShapes::Add(this, BodyPivot, EYJJShape::Sphere, FVector(-20 * S, -28 * S, 92 * S), FVector(26 * S, 20 * S, 14 * S), YJJShapes::Solid(this, FLinearColor::White, 2.f), false);
@@ -64,7 +96,11 @@ void AYJJSlime::BeginPlay()
 	}
 	// 바닥 그림자 (점프할 때 위치를 알기 쉽게)
 	Shadow = YJJShapes::Add(this, RootComponent, EYJJShape::Cylinder, FVector(0, 0, 2), FVector(120 * S, 120 * S, 2), YJJShapes::Solid(this, FLinearColor(0.05f, 0.08f, 0.06f), 0.f), false);
+	BuildPuffs();
+}
 
+void AYJJSlime::BuildPuffs()
+{
 	PuffMID = YJJShapes::Glow(this, YJJShapes::Shade(Color, 1.3f), 0.f, 0.6f, 1.f);
 	for (int32 i = 0; i < 10; ++i)
 	{

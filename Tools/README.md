@@ -39,6 +39,20 @@ Tools/AI3D/.venv/Scripts/python.exe Tools/AI3D/gen3d.py --name SM_이름 --promp
 익명은 하루 할당량이 아주 적다. 무료 Hugging Face 계정의 토큰을 `HF_TOKEN` 환경변수에 넣으면 늘어난다.
 생성된 GLB는 `BuildContent.ps1`이 `/Game/YJJFantasy/AI/`로 임포트한다.
 
+## 캐릭터 (Blender, 리깅·애니메이션)
+
+그림체: 귀엽지만 엉뚱한 2D 모바일 고양이 게임 느낌의 3D화 (오리지널 캐릭터). 굵은 먹선은 셀 셰이딩 포스트 프로세스가 그린다.
+
+```
+"C:\Program Files\Blender Foundation\Blender 5.3\blender.exe" -b --factory-startup --python Tools/Character/make_hero.py -- --preview
+"C:\Program Files\Blender Foundation\Blender 5.3\blender.exe" -b --factory-startup --python Tools/Character/make_mob.py -- --preview
+```
+
+- `make_hero.py` : 주인공 고양이 냥용사. 모델 + 뼈 15개 + 애니메이션 10개 -> `Generated/SK_Hero.glb`
+- `make_mob.py` : 몬스터 떡무지. 몸/얼굴 따로 -> `SM_Mob_Body.glb`, `SM_Mob_Face.glb` (몸 색은 게임이 입힌다)
+- `--preview` : `Generated/preview_*.png` 자세별 렌더. `contact_sheet.py`로 한 장에 모아 본다
+- `BuildContent.ps1`이 `/Game/YJJFantasy/Characters/`로 임포트한다
+
 ## 게임: 하늘섬의 등불
 
 고도 3km 구름 바다 위 하늘섬. 빛을 잃은 바람의 성소를 되살리려면 다섯 섬의 바람 등불을 밝힌다.

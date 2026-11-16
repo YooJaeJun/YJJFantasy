@@ -32,6 +32,7 @@ protected:
 
 private:
 	bool FindGround(const FVector& At, float& OutZ) const;
+	void BuildPuffs();
 	void Die();
 
 	FLinearColor Color = FLinearColor(0.45f, 0.85f, 0.55f);
