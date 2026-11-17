@@ -356,13 +356,16 @@ void AYJJWorldBuilder::AddPine(const FVector& Base, float Scale, const FLinearCo
 	AYJJProp* Tree = NewProp(Base);
 	USceneComponent* R = Tree->GetRootComponent();
 	const float S = Scale;
-	YJJShapes::Add(Tree, R, EYJJShape::Cylinder, FVector(0, 0, 90 * S), FVector(44 * S, 44 * S, 180 * S), YJJShapes::Solid(Tree, FLinearColor(0.5f, 0.34f, 0.22f)), true);
-	UMaterialInterface* LeafMat = YJJShapes::Surface(Tree, YJJShapes::Shade(Leaf, 1.1f), YJJShapes::Shade(Leaf, 0.7f), 0.02f, 0.9f);
+	// 소프트아이스크림 같은 둥근 층 나무 (뾰족한 원뿔 대신)
+	YJJShapes::Add(Tree, R, EYJJShape::Cylinder, FVector(0, 0, 90 * S), FVector(44 * S, 44 * S, 180 * S), YJJShapes::Surface(Tree, FLinearColor(0.7f, 0.48f, 0.32f), FLinearColor(0.58f, 0.38f, 0.25f)), true);
+	UMaterialInterface* LeafMat = YJJShapes::Surface(Tree, YJJShapes::Shade(Leaf, 1.3f), YJJShapes::Shade(Leaf, 0.95f), 0.04f, 0.9f);
 	for (int32 i = 0; i < 3; ++i)
 	{
-		const float W0 = (280.f - i * 70.f) * S;
-		YJJShapes::Add(Tree, R, EYJJShape::Cone, FVector(0, 0, (200.f + i * 130.f) * S), FVector(W0, W0, 220 * S), LeafMat, i == 0);
+		const float W0 = (300.f - i * 80.f) * S;
+		YJJShapes::Add(Tree, R, EYJJShape::Sphere, FVector(0, 0, (230.f + i * 120.f) * S), FVector(W0, W0, W0 * 0.55f), LeafMat, i == 0);
 	}
+	// 꼭대기 동그란 방울
+	YJJShapes::Add(Tree, R, EYJJShape::Sphere, FVector(0, 0, 590.f * S), FVector(70 * S, 70 * S, 70 * S), LeafMat, false);
 }
 
 void AYJJWorldBuilder::AddRock(const FVector& Base, float Size, int32 Seed, const FLinearColor& Color)
@@ -382,13 +385,19 @@ void AYJJWorldBuilder::AddCrystals(const FVector& Base, float Size, const FLinea
 {
 	AYJJProp* Cluster = NewProp(Base);
 	USceneComponent* R = Cluster->GetRootComponent();
-	UMaterialInterface* Mat = YJJShapes::Surface(Cluster, YJJShapes::Shade(Color, 1.2f), Color, 1.2f, 0.15f);
+	// 만화풍 사탕 수정: 통통하고 파스텔, 은은하게만 빛난다
+	UMaterialInterface* Mat = YJJShapes::Surface(Cluster, YJJShapes::Shade(Color, 1.35f), YJJShapes::Shade(Color, 1.05f), 0.45f, 0.4f);
 	const int32 Count = 3 + Seed % 3;
 	for (int32 i = 0; i < Count; ++i)
 	{
 		const float A = i * 2.399963f + Seed;
 		const float H = Size * (i == 0 ? 1.f : 0.45f + 0.4f * YJJShapes::Hash(Seed * 5 + i));
-		const float Wd = H * 0.32f;
+		const float Wd = H * 0.48f;
+		// 가장 큰 수정 몇몇은 동그란 놀란 눈
+		if (i == 0 && Seed % 2 == 1)
+		{
+			YJJShapes::AddFace(Cluster, R, FVector(Wd * 0.33f, 0, H * 0.25f), FRotator(0, 0, 0), Wd * 0.32f, 2);
+		}
 		const float Off = (i == 0) ? 0.f : Size * 0.22f;
 		const FRotator Tilt(i == 0 ? 0.f : 25.f + 15.f * YJJShapes::Hash(i), FMath::RadiansToDegrees(A), 0);
 		const FVector Dir = Tilt.RotateVector(FVector(0, 0, 1));
@@ -1043,8 +1052,16 @@ void AYJJWorldBuilder::BuildVista()
 			Comp->SetupAttachment(Isle->GetRootComponent());
 			Comp->RegisterComponent();
 			Isle->AddInstanceComponent(Comp);
-			// 바닥 아래로 늘어진 바위 뿌리 (섬처럼 보이게)
-			YJJShapes::Add(Isle, Isle->GetRootComponent(), EYJJShape::Cone, FVector(0, 0, -B.BoxExtent.Z * S - I.Width * 0.25f), FVector(I.Width * 0.75f, I.Width * 0.75f, I.Width * 0.55f), YJJShapes::Solid(Isle, IslandColor::RockDark), false, FRotator(180, 0, 0));
+			// 사실적인 AI 텍스처 대신 만화 재질: 위를 보는 면은 잔디, 옆은 따뜻한 바위 (모양은 AI 그대로)
+			UMaterialInterface* Toon = YJJShapes::Surface(Isle, IslandColor::GrassMeadow, IslandColor::RockWarm);
+			for (int32 Slot = 0; Slot < Comp->GetNumMaterials(); ++Slot)
+			{
+				Comp->SetMaterial(Slot, Toon);
+			}
+			// 바닥: 다른 섬들처럼 둥근 바위 방울
+			const float Bottom = -B.BoxExtent.Z * S;
+			YJJShapes::Add(Isle, Isle->GetRootComponent(), EYJJShape::Sphere, FVector(0, 0, Bottom - I.Width * 0.08f), FVector(I.Width * 0.8f, I.Width * 0.8f, I.Width * 0.4f), YJJShapes::Surface(Isle, IslandColor::RockWarm, YJJShapes::Shade(IslandColor::RockWarm, 0.88f)), false);
+			YJJShapes::Add(Isle, Isle->GetRootComponent(), EYJJShape::Sphere, FVector(0, 0, Bottom - I.Width * 0.3f), FVector(I.Width * 0.42f, I.Width * 0.42f, I.Width * 0.3f), YJJShapes::Surface(Isle, IslandColor::RockWarm, YJJShapes::Shade(IslandColor::RockWarm, 0.88f)), false);
 		}
 		UE_LOG(LogYJJFantasy, Log, TEXT("AI 성소 섬 %d개 배치 (메시 폭 %.0f)"), UE_ARRAY_COUNT(AIIslands), MeshWidth);
 	}

@@ -32,6 +32,9 @@ AYJJEnvironment::AYJJEnvironment()
 
 	Atmosphere = CreateDefaultSubobject<USkyAtmosphereComponent>(TEXT("Atmosphere"));
 	Atmosphere->SetupAttachment(RootComponent);
+	// 만화풍 하늘: 고도 3km라 머리 위가 진한 남색이 되는데, 밝은 하늘색으로 끌어올린다
+	Atmosphere->SkyLuminanceFactor = FLinearColor(1.6f, 1.75f, 1.9f);
+	Atmosphere->MultiScatteringFactor = 2.f;
 
 	SkyLight = CreateDefaultSubobject<USkyLightComponent>(TEXT("SkyLight"));
 	SkyLight->SetupAttachment(RootComponent);
