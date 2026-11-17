@@ -60,6 +60,13 @@ namespace YJJShapes
 	UStaticMeshComponent* AddAI(AActor* Owner, USceneComponent* Parent, UStaticMesh* AI, const FVector& Location, float Size,
 		bool bBottomPivot, const FRotator& Rotation = FRotator::ZeroRotator);
 
+	/**
+	 * 멍한 만화 얼굴 (점 눈 + ω 입 + 볼). 배경 소품(구름·나무·바위)을 엉뚱하게 만든다.
+	 * Location은 얼굴 가운데, Rotation의 +X가 얼굴이 보는 방향, Width는 두 눈 바깥까지 폭.
+	 * Mood 0 = 세로 점 눈, 1 = 졸린 가로 눈, 2 = 동그란 놀란 눈
+	 */
+	void AddFace(AActor* Owner, USceneComponent* Parent, const FVector& Location, const FRotator& Rotation, float Width, int32 Mood);
+
 	/** 같은 도형·머티리얼을 많이 뿌릴 때 (풀, 꽃, 돌멩이) */
 	UInstancedStaticMeshComponent* AddInstanced(AActor* Owner, USceneComponent* Parent, EYJJShape Shape, UMaterialInterface* Material, bool bCollide);
 

@@ -202,32 +202,38 @@ AYJJProp* AYJJWorldBuilder::BuildIsland(const FVector& Center, float Radius, con
 {
 	AYJJProp* Island = NewProp(Center);
 	USceneComponent* R = Island->GetRootComponent();
-	UMaterialInterface* Ground = YJJShapes::Surface(Island, Grass, Rock);
-	UMaterialInterface* RockMat = YJJShapes::Surface(Island, YJJShapes::Shade(Grass, 0.95f), Rock);
-	UMaterialInterface* Under = YJJShapes::Surface(Island, Rock, YJJShapes::Shade(Rock, 0.9f));
+	// 만화풍 케이크 섬: 잔디 크림 + 코코아색 흙층 + 둥글둥글한 바닥
+	UMaterialInterface* Ground = YJJShapes::Surface(Island, Grass, YJJShapes::Shade(Grass, 0.8f));
+	UMaterialInterface* Icing = YJJShapes::Surface(Island, YJJShapes::Shade(Grass, 1.08f), YJJShapes::Shade(Grass, 0.86f));
+	UMaterialInterface* Dirt = YJJShapes::Surface(Island, FLinearColor(0.72f, 0.5f, 0.34f), FLinearColor(0.62f, 0.42f, 0.28f));
+	UMaterialInterface* Under = YJJShapes::Surface(Island, Rock, YJJShapes::Shade(Rock, 0.88f));
 
-	// 윗면 (풀) + 두꺼운 흙층
 	const float D = Radius * 2.f;
 	YJJShapes::Add(Island, R, EYJJShape::Cylinder, FVector(0, 0, -70), FVector(D, D, 140), Ground, bCollide);
-	YJJShapes::Add(Island, R, EYJJShape::Cylinder, FVector(0, 0, -200), FVector(D * 0.97f, D * 0.97f, 160), Under, false);
-	// 아래로 뾰족한 바위 뿌리
-	const float H = Radius * 1.15f;
-	YJJShapes::Add(Island, R, EYJJShape::Cone, FVector(0, 0, -280 - H * 0.5f), FVector(D * 0.95f, D * 0.95f, H), Under, false, FRotator(180, 0, 0));
-	for (int32 i = 0; i < 5; ++i)
+	YJJShapes::Add(Island, R, EYJJShape::Cylinder, FVector(0, 0, -215), FVector(D * 0.985f, D * 0.985f, 190), Dirt, false);
+	// 둥근 바닥: 층층이 작아지는 납작한 공 두 개. 각 공의 꼭대기는 흙층 안(-150)에 숨겨 윗면을 뚫지 않게
+	const float TopHide = -150.f;
+	const float H1 = Radius * 0.25f;
+	YJJShapes::Add(Island, R, EYJJShape::Sphere, FVector(0, 0, TopHide - H1), FVector(D * 0.96f, D * 0.96f, H1 * 2.f), Under, false);
+	const float H2 = Radius * 0.36f;
+	const float Top2 = TopHide - H1 * 0.9f;
+	YJJShapes::Add(Island, R, EYJJShape::Sphere, FVector(0, 0, Top2 - H2), FVector(D * 0.62f, D * 0.62f, H2 * 2.f), Under, false);
+	// 바닥에 매달린 둥근 바위 방울
+	for (int32 i = 0; i < 4; ++i)
 	{
 		const float A = YJJShapes::Hash(Seed * 11 + i) * TWO_PI;
-		const float Dist = Radius * (0.35f + 0.4f * YJJShapes::Hash(Seed * 13 + i));
-		const float S = Radius * (0.25f + 0.2f * YJJShapes::Hash(Seed * 17 + i));
-		YJJShapes::Add(Island, R, EYJJShape::Cone, FVector(FMath::Cos(A) * Dist, FMath::Sin(A) * Dist, -300 - S * 0.9f), FVector(S * 1.4f, S * 1.4f, S * 1.8f), Under, false, FRotator(180, 0, 0));
+		const float Dist = Radius * (0.3f + 0.25f * YJJShapes::Hash(Seed * 13 + i));
+		const float S = Radius * (0.28f + 0.14f * YJJShapes::Hash(Seed * 17 + i));
+		YJJShapes::Add(Island, R, EYJJShape::Sphere, FVector(FMath::Cos(A) * Dist, FMath::Sin(A) * Dist, TopHide - H1 * 1.5f - S * 0.3f), FVector(S, S, S * 0.85f), Under, false);
 	}
-	// 둘레 바위 (가장자리를 자연스럽게)
-	const int32 RimCount = FMath::Clamp(FMath::RoundToInt(Radius / 140.f), 8, 28);
+	// 가장자리로 흘러내린 잔디 크림 방울 (윗면보다 살짝 아래라 밟히지 않는다)
+	const int32 RimCount = FMath::Clamp(FMath::RoundToInt(Radius / 110.f), 10, 40);
 	for (int32 i = 0; i < RimCount; ++i)
 	{
-		const float A = (i + YJJShapes::Hash(Seed * 19 + i) * 0.6f) * (TWO_PI / RimCount);
-		const float S = 220.f + 260.f * YJJShapes::Hash(Seed * 23 + i);
-		const FVector P(FMath::Cos(A) * Radius * 0.98f, FMath::Sin(A) * Radius * 0.98f, -90.f - S * 0.25f);
-		YJJShapes::Add(Island, R, EYJJShape::Sphere, P, FVector(S * 1.3f, S, S * 0.9f), RockMat, bCollide, FRotator(YJJShapes::Hash(Seed * 29 + i) * 30.f, FMath::RadiansToDegrees(A), 0));
+		const float A = (i + YJJShapes::Hash(Seed * 19 + i) * 0.5f) * (TWO_PI / RimCount);
+		const float S = 150.f + 130.f * YJJShapes::Hash(Seed * 23 + i);
+		const FVector P(FMath::Cos(A) * Radius * 0.99f, FMath::Sin(A) * Radius * 0.99f, -60.f - S * 0.4f);
+		YJJShapes::Add(Island, R, EYJJShape::Sphere, P, FVector(S * 1.3f, S * 1.1f, S * 0.75f), Icing, false, FRotator(0, FMath::RadiansToDegrees(A), 0));
 	}
 
 	if (bDecorate)
@@ -251,12 +257,12 @@ void AYJJWorldBuilder::Decorate(AYJJProp* Island, float Radius, const FLinearCol
 	USceneComponent* R = Island->GetRootComponent();
 	const FVector C = Island->GetActorLocation();
 
-	// 풀잎 (작은 원뿔) 두 가지 색
-	UInstancedStaticMeshComponent* GrassA = YJJShapes::AddInstanced(Island, R, EYJJShape::Cone, YJJShapes::Surface(Island, YJJShapes::Shade(Grass, 1.2f), YJJShapes::Shade(Grass, 0.85f)), false);
-	UInstancedStaticMeshComponent* GrassB = YJJShapes::AddInstanced(Island, R, EYJJShape::Cone, YJJShapes::Surface(Island, YJJShapes::Shade(Grass, 1.35f), Grass), false);
+	// 풀숲: 가는 풀잎은 먹선 때문에 지저분해서, 동글동글한 풀 덩어리를 드문드문 (만화 배경처럼)
+	UInstancedStaticMeshComponent* GrassA = YJJShapes::AddInstanced(Island, R, EYJJShape::Sphere, YJJShapes::Surface(Island, YJJShapes::Shade(Grass, 1.15f), YJJShapes::Shade(Grass, 0.85f)), false);
+	UInstancedStaticMeshComponent* GrassB = YJJShapes::AddInstanced(Island, R, EYJJShape::Sphere, YJJShapes::Surface(Island, YJJShapes::Shade(Grass, 1.3f), Grass), false);
 	GrassA->SetCastShadow(false);
 	GrassB->SetCastShadow(false);
-	const int32 GrassCount = FMath::RoundToInt(Radius * Radius / 7000.f);
+	const int32 GrassCount = FMath::RoundToInt(Radius * Radius / 26000.f);
 	for (int32 i = 0; i < GrassCount; ++i)
 	{
 		const float A = YJJShapes::Hash(Seed * 101 + i) * TWO_PI;
@@ -267,15 +273,14 @@ void AYJJWorldBuilder::Decorate(AYJJProp* Island, float Radius, const FLinearCol
 			continue;
 		}
 		const float S = 0.6f + YJJShapes::Hash(Seed * 107 + i) * 0.8f;
-		const FVector Local(FMath::Cos(A) * Dist, FMath::Sin(A) * Dist, Z - C.Z + 14.f * S);
-		const FRotator Tilt(YJJShapes::Hash(i * 3) * 20.f - 10.f, 0, YJJShapes::Hash(i * 5) * 20.f - 10.f);
-		// 풀 한 포기 = 가는 잎 세 가닥
+		const FVector Local(FMath::Cos(A) * Dist, FMath::Sin(A) * Dist, Z - C.Z);
+		// 풀숲 하나 = 둥근 덩어리 세 개 (가운데가 크다)
 		for (int32 b = 0; b < 3; ++b)
 		{
 			const float BA = b * 2.1f + i;
-			const FVector Off(FMath::Cos(BA) * 6.f, FMath::Sin(BA) * 6.f, 0.f);
-			const FRotator Lean(FMath::Cos(BA) * 18.f + Tilt.Pitch, 0, FMath::Sin(BA) * 18.f + Tilt.Roll);
-			(i % 2 ? GrassA : GrassB)->AddInstance(FTransform(Lean, Local + Off, FVector(0.06f * S, 0.06f * S, (0.26f + 0.08f * b) * S)));
+			const float BS = (b == 0 ? 1.f : 0.7f) * S;
+			const FVector Off = (b == 0) ? FVector::ZeroVector : FVector(FMath::Cos(BA) * 26.f * S, FMath::Sin(BA) * 26.f * S, 0.f);
+			(i % 2 ? GrassA : GrassB)->AddInstance(FTransform(FRotator(0, BA * 57.f, 0), Local + Off + FVector(0, 0, 6.f * BS), FVector(0.55f * BS, 0.48f * BS, 0.36f * BS)));
 		}
 	}
 	UE_LOG(LogYJJFantasy, Display, TEXT("[World] decorate %s grass=%d/%d"), *Island->GetName(), GrassA->GetInstanceCount() + GrassB->GetInstanceCount(), GrassCount);
@@ -324,22 +329,25 @@ void AYJJWorldBuilder::AddTree(const FVector& Base, float Scale, int32 Seed, con
 	AYJJProp* Tree = NewProp(Base, FRotator(0, YJJShapes::Hash(Seed) * 360.f, 0));
 	USceneComponent* R = Tree->GetRootComponent();
 	const float S = Scale;
-	UMaterialInterface* Bark = YJJShapes::Surface(Tree, FLinearColor(0.55f, 0.38f, 0.25f), FLinearColor(0.45f, 0.3f, 0.2f));
-	UMaterialInterface* LeafMat = YJJShapes::Surface(Tree, YJJShapes::Shade(Leaf, 1.15f), YJJShapes::Shade(Leaf, 0.72f), 0.03f, 0.9f);
+	UMaterialInterface* Bark = YJJShapes::Surface(Tree, FLinearColor(0.7f, 0.48f, 0.32f), FLinearColor(0.58f, 0.38f, 0.25f));
+	UMaterialInterface* LeafMat = YJJShapes::Surface(Tree, YJJShapes::Shade(Leaf, 1.12f), YJJShapes::Shade(Leaf, 0.8f), 0.04f, 0.9f);
 
-	// 살짝 휜 줄기
-	YJJShapes::Add(Tree, R, EYJJShape::Cylinder, FVector(0, 0, 130 * S), FVector(56 * S, 56 * S, 260 * S), Bark, true);
-	YJJShapes::Add(Tree, R, EYJJShape::Cylinder, FVector(14 * S, 0, 330 * S), FVector(42 * S, 42 * S, 180 * S), Bark, true, FRotator(12, 0, 0));
-	YJJShapes::Add(Tree, R, EYJJShape::Cone, FVector(0, 0, 20 * S), FVector(110 * S, 110 * S, 60 * S), Bark, true);
-	// 몽글몽글한 잎 덩어리
-	const int32 Count = 4 + Seed % 3;
-	for (int32 i = 0; i < Count; ++i)
+	// 막대사탕 나무: 곧은 줄기 + 동그란 잎 덩어리 하나 (+ 작은 혹 둘)
+	YJJShapes::Add(Tree, R, EYJJShape::Cylinder, FVector(0, 0, 170 * S), FVector(50 * S, 50 * S, 340 * S), Bark, true);
+	YJJShapes::Add(Tree, R, EYJJShape::Sphere, FVector(0, 0, 10 * S), FVector(90 * S, 90 * S, 40 * S), Bark, false);
+	const float Crown = (360.f + 60.f * YJJShapes::Hash(Seed * 3)) * S;
+	const FVector CrownC(0, 0, 440.f * S);
+	YJJShapes::Add(Tree, R, EYJJShape::Sphere, CrownC, FVector(Crown, Crown, Crown * 0.9f), LeafMat, true);
+	for (int32 i = 0; i < 2; ++i)
 	{
-		const float A = i * 2.399963f + Seed;
-		const float Dist = (i == 0) ? 0.f : 110.f * S * (0.7f + YJJShapes::Hash(Seed * 7 + i) * 0.5f);
-		const float Size = (i == 0 ? 330.f : 230.f + 80.f * YJJShapes::Hash(Seed * 11 + i)) * S;
-		const float Z = (i == 0 ? 470.f : 390.f + 120.f * YJJShapes::Hash(Seed * 13 + i)) * S;
-		YJJShapes::Add(Tree, R, EYJJShape::Sphere, FVector(FMath::Cos(A) * Dist + 20 * S, FMath::Sin(A) * Dist, Z), FVector(Size, Size, Size * 0.85f), LeafMat, i == 0);
+		const float A = i * 2.6f + Seed;
+		const float Size = Crown * (0.42f + 0.1f * YJJShapes::Hash(Seed * 11 + i));
+		YJJShapes::Add(Tree, R, EYJJShape::Sphere, CrownC + FVector(FMath::Cos(A) * Crown * 0.42f, FMath::Sin(A) * Crown * 0.42f, Crown * (0.12f + 0.15f * i)), FVector(Size, Size, Size * 0.9f), LeafMat, false);
+	}
+	// 셋 중 하나는 멍한 얼굴이 있다 (엉뚱한 포인트)
+	if (Seed % 3 == 0)
+	{
+		YJJShapes::AddFace(Tree, R, CrownC + FVector(Crown * 0.49f, 0, -Crown * 0.05f), FRotator::ZeroRotator, Crown * 0.38f, Seed % 2);
 	}
 }
 
@@ -360,9 +368,14 @@ void AYJJWorldBuilder::AddPine(const FVector& Base, float Scale, const FLinearCo
 void AYJJWorldBuilder::AddRock(const FVector& Base, float Size, int32 Seed, const FLinearColor& Color)
 {
 	AYJJProp* Rock = NewProp(Base, FRotator(0, YJJShapes::Hash(Seed) * 360.f, 0));
-	UMaterialInterface* Mat = YJJShapes::Surface(Rock, FLinearColor(0.55f, 0.75f, 0.4f), Color);
-	YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Sphere, FVector(0, 0, Size * 0.25f), FVector(Size * 1.3f, Size, Size * 0.8f), Mat, true, FRotator(YJJShapes::Hash(Seed + 1) * 20.f, 0, YJJShapes::Hash(Seed + 2) * 20.f));
-	YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Sphere, FVector(Size * 0.5f, Size * 0.3f, Size * 0.1f), FVector(Size * 0.6f, Size * 0.55f, Size * 0.45f), Mat, true);
+	// 둥근 조약돌 바위. 짝수 번째는 졸린 얼굴
+	UMaterialInterface* Mat = YJJShapes::Surface(Rock, YJJShapes::Shade(Color, 1.25f), Color);
+	YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Sphere, FVector(0, 0, Size * 0.3f), FVector(Size * 1.3f, Size, Size * 0.9f), Mat, true);
+	YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Sphere, FVector(-Size * 0.45f, Size * 0.35f, Size * 0.1f), FVector(Size * 0.6f, Size * 0.55f, Size * 0.45f), Mat, true);
+	if (Seed % 2 == 0)
+	{
+		YJJShapes::AddFace(Rock, Rock->GetRootComponent(), FVector(Size * 0.62f, 0, Size * 0.38f), FRotator::ZeroRotator, Size * 0.55f, 1);
+	}
 }
 
 void AYJJWorldBuilder::AddCrystals(const FVector& Base, float Size, const FLinearColor& Color, int32 Seed, bool bLight)
@@ -455,7 +468,7 @@ AYJJProp* AYJJWorldBuilder::AddStone(const FVector& Top, float Radius, const FLi
 	USceneComponent* R = Stone->GetRootComponent();
 	const float D = Radius * 2.f;
 	YJJShapes::Add(Stone, R, EYJJShape::Cylinder, FVector(0, 0, -30), FVector(D, D, 60), YJJShapes::Surface(Stone, Grass, Rock), true);
-	YJJShapes::Add(Stone, R, EYJJShape::Cone, FVector(0, 0, -60 - Radius * 0.6f), FVector(D * 0.9f, D * 0.9f, Radius * 1.2f), YJJShapes::Surface(Stone, Rock, YJJShapes::Shade(Rock, 0.85f)), false, FRotator(180, 0, 0));
+	YJJShapes::Add(Stone, R, EYJJShape::Sphere, FVector(0, 0, -60 - Radius * 0.62f), FVector(D * 0.95f, D * 0.95f, Radius * 1.3f), YJJShapes::Surface(Stone, Rock, YJJShapes::Shade(Rock, 0.85f)), false);
 	YJJShapes::Add(Stone, R, EYJJShape::Sphere, FVector(Radius * 0.4f, 0, -20), FVector(Radius * 0.7f, Radius * 0.6f, 70), YJJShapes::Surface(Stone, Grass, Rock), true, FRotator(0, Seed * 47.f, 0));
 	return Stone;
 }
@@ -1060,8 +1073,9 @@ void AYJJWorldBuilder::BuildVista()
 		const float Z = -2000.f + YJJShapes::Hash(i * 23) * 9000.f;
 		AYJJProp* Rock = NewProp(W(FMath::Cos(A) * D, FMath::Sin(A) * D, Z), FRotator(YJJShapes::Hash(i) * 40.f, YJJShapes::Hash(i + 1) * 360.f, 0));
 		const float S = 150.f + YJJShapes::Hash(i * 29) * 500.f;
-		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Cylinder, FVector::ZeroVector, FVector(S * 2.f, S * 2.f, S * 0.4f), YJJShapes::Surface(Rock, IslandColor::GrassHub, IslandColor::RockWarm), false);
-		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Cone, FVector(0, 0, -S * 0.6f), FVector(S * 1.8f, S * 1.8f, S), YJJShapes::Solid(Rock, IslandColor::RockWarm), false, FRotator(180, 0, 0));
+		// 잔디 모자를 쓴 둥근 바위
+		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Sphere, FVector(0, 0, -S * 0.2f), FVector(S * 1.9f, S * 1.9f, S * 1.4f), YJJShapes::Surface(Rock, IslandColor::RockWarm, YJJShapes::Shade(IslandColor::RockWarm, 0.85f)), false);
+		YJJShapes::Add(Rock, Rock->GetRootComponent(), EYJJShape::Sphere, FVector(0, 0, S * 0.32f), FVector(S * 1.7f, S * 1.7f, S * 0.6f), YJJShapes::Surface(Rock, IslandColor::GrassHub, YJJShapes::Shade(IslandColor::GrassHub, 0.85f)), false);
 	}
 
 	// 몽실몽실한 뭉게구름: 섬 사이와 아래에 떠 있다 (구 여러 개를 뭉쳐서)
@@ -1085,9 +1099,31 @@ void AYJJWorldBuilder::BuildVista()
 		{
 			const float X = (k - (Puffs - 1) * 0.5f) * S * 0.55f;
 			const float PS = S * (k == Puffs / 2 ? 1.f : 0.6f + 0.35f * YJJShapes::Hash(i * 67 + k));
-			YJJShapes::Add(Cloud, Cloud->GetRootComponent(), EYJJShape::Sphere, FVector(X, (YJJShapes::Hash(i * 71 + k) - 0.5f) * S * 0.4f, PS * 0.15f), FVector(PS, PS * 0.85f, PS * 0.65f), Mat, false);
+			const float Y = (YJJShapes::Hash(i * 71 + k) - 0.5f) * S * 0.4f;
+			YJJShapes::Add(Cloud, Cloud->GetRootComponent(), EYJJShape::Sphere, FVector(X, Y, PS * 0.15f), FVector(PS, PS * 0.85f, PS * 0.65f), Mat, false);
+			// 셋 중 하나는 가운데 덩어리에 멍한 얼굴
+			if (k == Puffs / 2 && i % 3 == 0)
+			{
+				YJJShapes::AddFace(Cloud, Cloud->GetRootComponent(), FVector(X, Y - PS * 0.415f, PS * 0.2f), FRotator(0, -90.f, 0), PS * 0.32f, (i / 3) % 3);
+			}
 		}
 		// 납작한 바닥
 		YJJShapes::Add(Cloud, Cloud->GetRootComponent(), EYJJShape::Cylinder, FVector(0, 0, -S * 0.05f), FVector(S * Puffs * 0.55f, S * 0.7f, S * 0.12f), Mat, false);
+	}
+
+	// 발밑 만화 구름 바다: 볼류메트릭 구름 대신 납작한 구름 덩어리를 넓게 깐다
+	{
+		AYJJProp* Sea = NewProp(W(0, 0, -3600));
+		UMaterialInterface* Mat = YJJShapes::Surface(Sea, FLinearColor(1.f, 1.f, 1.f), FLinearColor(0.8f, 0.86f, 1.f), 0.3f, 1.f);
+		UInstancedStaticMeshComponent* Puffs = YJJShapes::AddInstanced(Sea, Sea->GetRootComponent(), EYJJShape::Sphere, Mat, false);
+		Puffs->SetCastShadow(false);
+		for (int32 i = 0; i < 220; ++i)
+		{
+			const float A = YJJShapes::Hash(i * 131 + 7) * TWO_PI;
+			const float D = 2000.f + FMath::Sqrt(YJJShapes::Hash(i * 137 + 9)) * 42000.f;
+			const float S = 2600.f + YJJShapes::Hash(i * 139) * 3800.f;
+			const float Z = (YJJShapes::Hash(i * 149) - 0.5f) * 900.f;
+			Puffs->AddInstance(FTransform(FRotator(0, A * 57.f, 0), FVector(FMath::Cos(A) * D, FMath::Sin(A) * D, Z), FVector(S / 100.f, S * 0.8f / 100.f, S * 0.32f / 100.f)));
+		}
 	}
 }

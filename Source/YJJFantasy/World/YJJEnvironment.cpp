@@ -25,7 +25,8 @@ AYJJEnvironment::AYJJEnvironment()
 	Sun->SetLightColor(FLinearColor(1.f, 0.86f, 0.68f));
 	// 볼류메트릭 포그 안에서 빛줄기가 보이도록 산란을 키운다
 	Sun->VolumetricScatteringIntensity = 3.f;
-	Sun->bEnableLightShaftBloom = true;
+	// 만화풍: 빛줄기 블룸은 끈다
+	Sun->bEnableLightShaftBloom = false;
 	Sun->BloomScale = 0.25f;
 	Sun->BloomThreshold = 4.f;
 
@@ -49,15 +50,17 @@ AYJJEnvironment::AYJJEnvironment()
 	// 하늘섬은 고도 3km. 구름층(0.6~2.2km)이 발밑에 바다처럼 깔린다
 	Clouds->SetLayerBottomAltitude(0.6f);
 	Clouds->SetLayerHeight(1.6f);
+	// 만화풍 배경: 사실적인 볼류메트릭 구름 대신 월드 빌더가 몽실한 만화 구름 바다를 깐다
+	Clouds->SetVisibility(false);
 
 	Fog = CreateDefaultSubobject<UExponentialHeightFogComponent>(TEXT("Fog"));
 	Fog->SetupAttachment(RootComponent);
 	// 가까운 건 또렷하게, 먼 섬만 푸르게 바래도록 옅게
-	Fog->SetFogDensity(0.004f);
+	Fog->SetFogDensity(0.0022f);
 	Fog->SetFogHeightFalloff(0.06f);
 	Fog->SetStartDistance(2500.f);
-	Fog->SetFogInscatteringColor(FLinearColor(0.28f, 0.48f, 0.9f));
-	Fog->SetVolumetricFog(true);
+	Fog->SetFogInscatteringColor(FLinearColor(0.45f, 0.68f, 1.f));
+	Fog->SetVolumetricFog(false);
 	Fog->SetVolumetricFogScatteringDistribution(0.75f);
 	Fog->SetVolumetricFogExtinctionScale(0.6f);
 	Fog->SetVolumetricFogAlbedo(FColor(255, 240, 220));
@@ -77,7 +80,7 @@ AYJJEnvironment::AYJJEnvironment()
 	PP.AutoExposureApplyPhysicalCameraExposure = false;
 	// 동화 같은 색감: 채도·대비 살짝 올리고, 그림자는 푸르게, 하이라이트는 따뜻하게
 	PP.bOverride_ColorSaturation = true;
-	PP.ColorSaturation = FVector4(1.25f, 1.25f, 1.25f, 1.f);
+	PP.ColorSaturation = FVector4(1.32f, 1.32f, 1.32f, 1.f);
 	PP.bOverride_ColorContrast = true;
 	PP.ColorContrast = FVector4(1.05f, 1.05f, 1.05f, 1.f);
 	PP.bOverride_ColorGainShadows = true;
@@ -85,9 +88,9 @@ AYJJEnvironment::AYJJEnvironment()
 	PP.bOverride_ColorGainHighlights = true;
 	PP.ColorGainHighlights = FVector4(1.06f, 1.0f, 0.92f, 1.f);
 	PP.bOverride_BloomIntensity = true;
-	PP.BloomIntensity = 0.9f;
+	PP.BloomIntensity = 0.55f;
 	PP.bOverride_VignetteIntensity = true;
-	PP.VignetteIntensity = 0.35f;
+	PP.VignetteIntensity = 0.18f;
 }
 
 void AYJJEnvironment::OnConstruction(const FTransform& Transform)
@@ -105,6 +108,8 @@ void AYJJEnvironment::BeginPlay()
 	if (UMaterialInterface* Toon = LoadObject<UMaterialInterface>(nullptr, YJJAssetPaths::ToonPostProcess, nullptr, LOAD_NoWarn | LOAD_Quiet))
 	{
 		ToonMID = UMaterialInstanceDynamic::Create(Toon, this);
+		// 만화풍: 명암을 더 평평하게 끊는다
+		ToonMID->SetScalarParameterValue(TEXT("Strength"), 0.88f);
 		PostProcess->Settings.WeightedBlendables.Array.Add(FWeightedBlendable(1.f, ToonMID));
 	}
 }
