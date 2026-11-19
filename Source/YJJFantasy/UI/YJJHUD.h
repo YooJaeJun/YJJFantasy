@@ -24,6 +24,8 @@ private:
 	/** 주아체에 없는 글자를 채우는 엔진 기본 글꼴 */
 	static const UFont* BaseFont();
 	static FLinearColor WithAlpha(FLinearColor C, float A);
+	/** Colors.csv 의 HUD 색에 투명도를 곱한다 */
+	static FLinearColor Hud(const TCHAR* Name, float Alpha);
 
 	/** 한 번 읽어 GC 루트에 올려 둔다 */
 	static UFont* FallbackFont;
