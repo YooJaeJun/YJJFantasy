@@ -102,6 +102,53 @@ public:
 	static FLinearColor Shade(const FLinearColor& Color, float Scale);
 
 private:
+	// ---- 단위 도형과 선분 교차
+	/** 교차 없음 (t 는 0~1) */
+	static constexpr float NoHit = 2.f;
+	/** 엔진 Plane 은 두께가 없어서 1cm 판으로 본다 */
+	static constexpr float PlaneHalfThickness = 0.5f;
+	/** 엔진 Cone: 밑면 반지름 50, 높이 100 -> 옆면 기울기 */
+	static constexpr float ConeSlope = 0.5f;
+	static constexpr float MinConeRadius = 0.001f;
+
+	// ---- 멍한 얼굴 (폭 W 에 곱하는 비율)
+	struct FFaceShape
+	{
+		FLinearColor InkColor;
+		float InkRoughness;
+		FLinearColor BlushColor;
+		float BlushEmissive;
+		FVector EyeDot;
+		FVector EyeSleepy;
+		FVector EyeRound;
+		float EyeSpread;
+		float EyeUp;
+		FVector BlushSize;
+		float BlushSpread;
+		float BlushUp;
+		FVector MouthSize;
+		float MouthSpread;
+		float MouthUp;
+		float MouthTilt;
+	};
+	inline static const FFaceShape Face = {
+		FLinearColor(0.03f, 0.03f, 0.04f), 0.3f,
+		FLinearColor(1.f, 0.55f, 0.62f), 0.15f,
+		FVector(0.06f, 0.09f, 0.17f), FVector(0.05f, 0.2f, 0.045f), FVector(0.06f, 0.15f, 0.15f),
+		0.3f, 0.12f,
+		FVector(0.03f, 0.2f, 0.1f), 0.52f, -0.06f,
+		FVector(0.04f, 0.13f, 0.04f), 0.065f, -0.1f, 25.f,
+	};
+
+	// ---- PCG 해시 상수
+	static constexpr uint32 PcgMultiplier = 747796405u;
+	static constexpr uint32 PcgIncrement = 2891336453u;
+	static constexpr uint32 PcgShiftSelect = 28u;
+	static constexpr uint32 PcgShiftBase = 4u;
+	static constexpr uint32 PcgOutputMultiplier = 277803737u;
+	static constexpr uint32 PcgFinalShift = 22u;
+	static constexpr uint32 HashMask = 0xFFFFFFu;
+
 	/** 엔진/게임 에셋은 GC 루트에 올려 두고 계속 쓴다 */
 	template <typename T>
 	static T* LoadCached(const TCHAR* Path)

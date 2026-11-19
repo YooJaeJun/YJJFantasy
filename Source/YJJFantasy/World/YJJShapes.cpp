@@ -112,7 +112,7 @@ UStaticMeshComponent* YJJShapes::Add(AActor* Owner, USceneComponent* Parent, EYJ
 	}
 	Comp->SetRelativeLocation(Location);
 	Comp->SetRelativeRotation(Rotation);
-	Comp->SetRelativeScale3D(Size / 100.f);
+	Comp->SetRelativeScale3D(Size / BaseShapeSize);
 	if (Material)
 	{
 		Comp->SetMaterial(0, Material);
@@ -154,8 +154,8 @@ bool YJJShapes::RayCast(const FCollider& Collider, const FVector& Start, const F
 	const FTransform& X = Collider.Transform;
 	const FVector P = X.InverseTransformPosition(Start);
 	const FVector D = X.InverseTransformPosition(End) - P;
-	const float R = 50.f;
-	float BestT = 2.f;
+	const float R = BaseShapeSize * 0.5f;
+	float BestT = NoHit;
 	FVector BestN = FVector::ZeroVector;
 
 	auto Consider = [&](float T, const FVector& N)
@@ -172,7 +172,7 @@ bool YJJShapes::RayCast(const FCollider& Collider, const FVector& Start, const F
 	case EYJJShape::Cube:
 	case EYJJShape::Plane:
 	{
-		const float HalfZ = Collider.Shape == EYJJShape::Plane ? 0.5f : R;
+		const float HalfZ = Collider.Shape == EYJJShape::Plane ? PlaneHalfThickness : R;
 		const FVector Half(R, R, HalfZ);
 		for (int32 Axis = 0; Axis < 3; ++Axis)
 		{
@@ -243,7 +243,7 @@ bool YJJShapes::RayCast(const FCollider& Collider, const FVector& Start, const F
 	case EYJJShape::Cone:
 	{
 		// 밑면 z=-50 반지름 50, 꼭짓점 z=+50. 옆면: x²+y² = (k(50 - z))², k = 0.5
-		const float K = 0.5f;
+		const float K = ConeSlope;
 		if (!FMath::IsNearlyZero(D.Z))
 		{
 			const float T = (-R - P.Z) / D.Z;
@@ -267,7 +267,7 @@ bool YJJShapes::RayCast(const FCollider& Collider, const FVector& Start, const F
 				if (Q.Z >= -R && Q.Z <= R)
 				{
 					const float Rad = FMath::Sqrt(Q.X * Q.X + Q.Y * Q.Y);
-					const FVector N = FVector(Q.X / FMath::Max(Rad, 0.001f), Q.Y / FMath::Max(Rad, 0.001f), K).GetSafeNormal();
+					const FVector N = FVector(Q.X / FMath::Max(Rad, MinConeRadius), Q.Y / FMath::Max(Rad, MinConeRadius), K).GetSafeNormal();
 					Consider(T, N);
 				}
 			}
@@ -296,25 +296,25 @@ UStaticMesh* YJJShapes::AIMesh(const TCHAR* Name)
 
 void YJJShapes::AddFace(AActor* Owner, USceneComponent* Parent, const FVector& Location, const FRotator& Rotation, float Width, int32 Mood)
 {
-	UMaterialInterface* Ink = Solid(Owner, FLinearColor(0.03f, 0.03f, 0.04f), 0.f, 0.3f);
-	UMaterialInterface* Pink = Solid(Owner, FLinearColor(1.f, 0.55f, 0.62f), 0.15f);
+	UMaterialInterface* Ink = Solid(Owner, Face.InkColor, 0.f, Face.InkRoughness);
+	UMaterialInterface* Pink = Solid(Owner, Face.BlushColor, Face.BlushEmissive);
 	const float W = Width;
 	auto At = [&](float Y, float Z) { return Location + Rotation.RotateVector(FVector(0.f, Y * W, Z * W)); };
 	for (int32 Side = -1; Side <= 1; Side += 2)
 	{
-		FVector EyeSize(0.06f * W, 0.09f * W, 0.17f * W); // 세로 점
+		FVector EyeSize = Face.EyeDot * W; // 세로 점
 		if (Mood == 1)
 		{
-			EyeSize = FVector(0.05f * W, 0.2f * W, 0.045f * W); // 졸린 가로 선
+			EyeSize = Face.EyeSleepy * W; // 졸린 가로 선
 		}
 		else if (Mood == 2)
 		{
-			EyeSize = FVector(0.06f * W, 0.15f * W, 0.15f * W); // 동그란 눈
+			EyeSize = Face.EyeRound * W; // 동그란 눈
 		}
-		Add(Owner, Parent, EYJJShape::Sphere, At(Side * 0.3f, 0.12f), EyeSize, Ink, false, Rotation);
-		Add(Owner, Parent, EYJJShape::Sphere, At(Side * 0.52f, -0.06f), FVector(0.03f * W, 0.2f * W, 0.1f * W), Pink, false, Rotation);
+		Add(Owner, Parent, EYJJShape::Sphere, At(Side * Face.EyeSpread, Face.EyeUp), EyeSize, Ink, false, Rotation);
+		Add(Owner, Parent, EYJJShape::Sphere, At(Side * Face.BlushSpread, Face.BlushUp), Face.BlushSize * W, Pink, false, Rotation);
 		// ω 입: 작은 반원 두 개를 기울여 붙인다
-		Add(Owner, Parent, EYJJShape::Sphere, At(Side * 0.065f, -0.1f), FVector(0.04f * W, 0.13f * W, 0.04f * W), Ink, false, Rotation + FRotator(0.f, 0.f, Side * 25.f));
+		Add(Owner, Parent, EYJJShape::Sphere, At(Side * Face.MouthSpread, Face.MouthUp), Face.MouthSize * W, Ink, false, Rotation + FRotator(0.f, 0.f, Side * Face.MouthTilt));
 	}
 }
 
@@ -380,10 +380,11 @@ UInstancedStaticMeshComponent* YJJShapes::AddInstanced(AActor* Owner, USceneComp
 
 float YJJShapes::Hash(int32 Seed)
 {
-	uint32 X = static_cast<uint32>(Seed) * 747796405u + 2891336453u;
-	X = ((X >> ((X >> 28u) + 4u)) ^ X) * 277803737u;
-	X = (X >> 22u) ^ X;
-	return static_cast<float>(X & 0xFFFFFFu) / static_cast<float>(0xFFFFFFu);
+	// PCG 해시 (Jarzynski & Olano, 2020)
+	uint32 X = static_cast<uint32>(Seed) * PcgMultiplier + PcgIncrement;
+	X = ((X >> ((X >> PcgShiftSelect) + PcgShiftBase)) ^ X) * PcgOutputMultiplier;
+	X = (X >> PcgFinalShift) ^ X;
+	return static_cast<float>(X & HashMask) / static_cast<float>(HashMask);
 }
 
 FLinearColor YJJShapes::Shade(const FLinearColor& Color, float Scale)

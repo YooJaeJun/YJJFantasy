@@ -209,4 +209,9 @@ private:
 	}
 
 	static FAutoConsoleCommand ReloadCommand;
+
+	static constexpr int32 RGBParts = 3;
+	static constexpr int32 RGBAParts = 4;
+	/** Colors.csv 에 없는 이름은 눈에 띄는 분홍 */
+	inline static const FLinearColor MissingColor = FLinearColor(1.f, 0.f, 1.f);
 };

@@ -77,12 +77,12 @@ FLinearColor FYJJData::ParseLinear(const FString& Text, bool& bOk)
 {
 	TArray<FString> Parts;
 	Text.ParseIntoArray(Parts, TEXT("|"));
-	bOk = Parts.Num() == 3 || Parts.Num() == 4;
+	bOk = Parts.Num() == RGBParts || Parts.Num() == RGBAParts;
 	if (!bOk)
 	{
 		return FLinearColor::White;
 	}
-	return FLinearColor(FCString::Atof(*Parts[0]), FCString::Atof(*Parts[1]), FCString::Atof(*Parts[2]), Parts.Num() == 4 ? FCString::Atof(*Parts[3]) : 1.f);
+	return FLinearColor(FCString::Atof(*Parts[0]), FCString::Atof(*Parts[1]), FCString::Atof(*Parts[2]), Parts.Num() == RGBAParts ? FCString::Atof(*Parts[RGBAParts - 1]) : 1.f);
 }
 
 FLinearColor FYJJData::Color(const FString& NameOrLinear)
@@ -110,7 +110,7 @@ FLinearColor FYJJData::Color(const FString& NameOrLinear)
 		S.Missing.Add(NameOrLinear);
 		UE_LOG(LogYJJFantasy, Warning, TEXT("[Data] Colors.csv 에 '%s' 가 없다"), *NameOrLinear);
 	}
-	return FLinearColor(1.f, 0.f, 1.f);
+	return MissingColor;
 }
 
 TArray<FLinearColor> FYJJData::Colors(const FString& List)

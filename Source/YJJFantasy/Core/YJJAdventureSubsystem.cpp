@@ -1,5 +1,6 @@
 #include "Core/YJJAdventureSubsystem.h"
 
+#include "Data/YJJData.h"
 #include "Data/YJJLoc.h"
 #include "Core/YJJAudio.h"
 #include "Engine/World.h"
@@ -42,7 +43,7 @@ void UYJJAdventureSubsystem::Tick(float DeltaTime)
 	if (CardAge >= 0.f)
 	{
 		CardAge += DeltaTime;
-		if (CardAge > 5.f)
+		if (CardAge > FYJJData::Tune(TEXT("Adventure.ZoneCardDuration")))
 		{
 			CardAge = -1.f;
 		}
@@ -50,7 +51,7 @@ void UYJJAdventureSubsystem::Tick(float DeltaTime)
 
 	UpdateZones(DeltaTime);
 
-	if (Phase == EYJJPhase::Finale && PhaseTime > 14.f)
+	if (Phase == EYJJPhase::Finale && PhaseTime > FYJJData::Tune(TEXT("Adventure.FinaleDuration")))
 	{
 		Phase = EYJJPhase::Ended;
 		PhaseTime = 0.f;
@@ -74,7 +75,7 @@ void UYJJAdventureSubsystem::UpdateZones(float DeltaTime)
 	for (int32 i = 0; i < Zones.Num(); ++i)
 	{
 		const float Dist = FVector::Dist2D(P, Zones[i].Center);
-		if (Dist < Zones[i].Radius && FMath::Abs(P.Z - Zones[i].Center.Z) < 3000.f && Dist < BestDist)
+		if (Dist < Zones[i].Radius && FMath::Abs(P.Z - Zones[i].Center.Z) < FYJJData::Tune(TEXT("Adventure.ZoneHeight")) && Dist < BestDist)
 		{
 			Best = i;
 			BestDist = Dist;
@@ -93,11 +94,17 @@ void UYJJAdventureSubsystem::UpdateZones(float DeltaTime)
 			{
 				CardZone = Best;
 				CardAge = 0.f;
-				YJJAudio::Play(this, EYJJSound::ZoneEnter, FVector::ZeroVector, 0.8f);
+				YJJAudio::Play(this, EYJJSound::ZoneEnter, FVector::ZeroVector, FYJJData::Tune(TEXT("Adventure.ZoneSoundVolume")));
 			}
 			UE_LOG(LogYJJFantasy, Display, TEXT("[Adventure] zone %s"), *Zones[Best].Name);
 		}
 	}
+}
+
+float UYJJAdventureSubsystem::GetStaminaBonus() const
+{
+	const int32 Every = FMath::Max(1, FMath::RoundToInt(FYJJData::Tune(TEXT("Adventure.StardustPerStaminaStep"))));
+	return (Stardust / Every) * FYJJData::Tune(TEXT("Adventure.StaminaStep"));
 }
 
 const FYJJZone* UYJJAdventureSubsystem::GetZoneCard(float& OutAge) const
@@ -133,10 +140,10 @@ void UYJJAdventureSubsystem::OnLanternLit(AYJJLantern* Lantern)
 {
 	const int32 Lit = GetLanternsLit();
 	UE_LOG(LogYJJFantasy, Display, TEXT("[Adventure] lantern %s lit (%d/%d) t=%.0fs"), *Lantern->GetLanternName(), Lit, Lanterns.Num(), PlayTime);
-	Toast(FYJJLoc::Format(TEXT("Toast.LanternLit"), { Lantern->GetLanternName(), Lit, Lanterns.Num() }), FLinearColor(1.f, 0.85f, 0.45f), 4.f);
+	Toast(FYJJLoc::Format(TEXT("Toast.LanternLit"), { Lantern->GetLanternName(), Lit, Lanterns.Num() }), FYJJData::Color(TEXT("ToastLantern")), FYJJData::Tune(TEXT("Adventure.ToastLantern")));
 	if (Lit == Lanterns.Num())
 	{
-		Toast(FYJJLoc::Get(TEXT("Toast.AllLanterns")), FLinearColor(0.6f, 0.95f, 1.f), 6.f);
+		Toast(FYJJLoc::Get(TEXT("Toast.AllLanterns")), FYJJData::Color(TEXT("ToastAllLanterns")), FYJJData::Tune(TEXT("Adventure.ToastAllLanterns")));
 		if (AYJJShrine* Shrine = Shrine_.Get())
 		{
 			Shrine->SetAwake(true);
@@ -150,7 +157,7 @@ void UYJJAdventureSubsystem::OnStardustCollected()
 	Stardust++;
 	if (GetStaminaBonus() > OldBonus)
 	{
-		Toast(FYJJLoc::Get(TEXT("Toast.StaminaUp")), FLinearColor(0.7f, 0.9f, 1.f), 3.5f);
+		Toast(FYJJLoc::Get(TEXT("Toast.StaminaUp")), FYJJData::Color(TEXT("ToastStamina")), FYJJData::Tune(TEXT("Adventure.ToastStamina")));
 	}
 }
 
@@ -158,7 +165,7 @@ void UYJJAdventureSubsystem::OnChestOpened()
 {
 	ChestsOpened++;
 	UE_LOG(LogYJJFantasy, Display, TEXT("[Adventure] chest %d/%d"), ChestsOpened, ChestTotal);
-	Toast(FYJJLoc::Format(TEXT("Toast.ChestFound"), { ChestsOpened, ChestTotal }), FLinearColor(1.f, 0.8f, 0.4f), 3.5f);
+	Toast(FYJJLoc::Format(TEXT("Toast.ChestFound"), { ChestsOpened, ChestTotal }), FYJJData::Color(TEXT("ToastChest")), FYJJData::Tune(TEXT("Adventure.ToastChest")));
 }
 
 void UYJJAdventureSubsystem::SetCheckpoint(const FVector& Location, float Yaw)
@@ -184,7 +191,7 @@ void UYJJAdventureSubsystem::Toast(const FString& Text, const FLinearColor& Colo
 	T.Text = Text;
 	T.Color = Color;
 	T.Duration = Duration;
-	if (Toasts.Num() > 4)
+	if (Toasts.Num() > FMath::RoundToInt(FYJJData::Tune(TEXT("Adventure.MaxToasts"))))
 	{
 		Toasts.RemoveAt(0);
 	}

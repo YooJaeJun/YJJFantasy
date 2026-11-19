@@ -48,17 +48,16 @@ void AYJJSkyWhale::Tick(float DeltaTime)
 	Angle += DeltaTime * TWO_PI / Period;
 
 	// 원 궤도 + 느린 출렁임
-	const float Bob = FMath::Sin(Time * 0.35f) * 450.f;
+	const float Bob = FMath::Sin(Time * BobSpeed) * BobHeight;
 	const FVector P = Center + FVector(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, Bob);
 	// 진행 방향 = 원의 접선 (반시계)
-	const float Yaw = FMath::RadiansToDegrees(Angle) + 90.f;
-	const float Pitch = FMath::Cos(Time * 0.35f) * 6.f; // 오를 때 고개를 든다
-	const float Roll = -8.f;                             // 원 안쪽으로 기울기
-	SetActorLocationAndRotation(P, FRotator(Pitch, Yaw, Roll));
+	const float Yaw = FMath::RadiansToDegrees(Angle) + TangentTurn;
+	const float Pitch = FMath::Cos(Time * BobSpeed) * BobPitch; // 오를 때 고개를 든다
+	SetActorLocationAndRotation(P, FRotator(Pitch, Yaw, BankRoll));
 
 	// 헤엄치는 몸짓: 몸 전체를 살짝 위아래로 흔든다
 	if (Body)
 	{
-		Body->SetRelativeRotation(FRotator(FMath::Sin(Time * 1.1f) * 3.f, FMath::Sin(Time * 0.55f) * 2.f, 0));
+		Body->SetRelativeRotation(FRotator(FMath::Sin(Time * SwimPitchSpeed) * SwimPitch, FMath::Sin(Time * SwimYawSpeed) * SwimYaw, 0));
 	}
 }

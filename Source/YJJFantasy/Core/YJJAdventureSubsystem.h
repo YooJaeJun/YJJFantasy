@@ -80,8 +80,8 @@ public:
 	bool GetObjectiveLocation(const FVector& From, FVector& OutLocation) const;
 	FString GetObjectiveText() const;
 
-	/** 별가루 15개마다 기력 상한 +20 */
-	float GetStaminaBonus() const { return (Stardust / 15) * 20.f; }
+	/** 별가루 N개마다 기력 상한 +M (Tuning.csv Adventure.StardustPerStaminaStep, StaminaStep) */
+	float GetStaminaBonus() const;
 
 	struct FToast
 	{

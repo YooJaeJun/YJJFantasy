@@ -68,6 +68,17 @@ Stardust.ComboWindow,1.2,이 안에 또 주우면 음이 올라간다
 Stardust.ComboMax,7,
 Stardust.ComboSemitones,2,한 번에 오르는 반음
 Stardust.Volume,0.7,
+Adventure.ZoneCardDuration,5,섬 이름 카드가 떠 있는 시간
+Adventure.ZoneHeight,3000,구역 판정 높이 차
+Adventure.ZoneSoundVolume,0.8,
+Adventure.FinaleDuration,14,엔딩 연출 길이 (초)
+Adventure.MaxToasts,4,한 번에 보이는 알림 수
+Adventure.ToastLantern,4,알림 표시 시간(초)
+Adventure.ToastAllLanterns,6,
+Adventure.ToastStamina,3.5,
+Adventure.ToastChest,3.5,
+Adventure.StardustPerStaminaStep,15,별가루 이만큼마다
+Adventure.StaminaStep,20,기력 상한 증가
 Audio.FullVolumeDistance,800,이 거리까지는 원래 크기
 Audio.FadeDistance,5000,그 뒤로 이만큼 가면 0
 Audio.MusicVolume,0.5,

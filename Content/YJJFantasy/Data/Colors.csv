@@ -44,6 +44,10 @@ ShrineMarble,0.82|0.79|0.74,성소 대리석
 ShrineMarbleSide,0.66|0.66|0.7,
 ShrineGold,0.85|0.62|0.22,
 ShrineCrystalColor,0.35|0.85|1,깨어난 성소 수정
+ToastLantern,1|0.85|0.45,알림 색
+ToastAllLanterns,0.6|0.95|1,
+ToastStamina,0.7|0.9|1,
+ToastChest,1|0.8|0.4,
 FlowerDefault1,1|0.85|0.3,꾸미기 기본 꽃
 FlowerDefault2,1|0.55|0.7,
 FlowerDefault3,1|1|0.95,
