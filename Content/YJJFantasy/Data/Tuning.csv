@@ -128,6 +128,21 @@ Shrine.CameraHeight,500,
 Shrine.CameraRiseSpeed,40,
 Shrine.CameraLookAbove,250,수정보다 이만큼 위를 본다
 Shrine.CameraReturnDelay,9,엔딩 카드 뒤 주인공에게 돌아가기까지
+Hero.JumpVolume,0.5,소리 크기
+Hero.GlideVolume,0.6,
+Hero.SwingVolume,0.6,
+Hero.RespawnVolume,0.7,
+Hero.UpdraftVolume,0.6,
+Hero.LandVolumeMax,0.8,
+Hero.GlideOpenKeep,0.2,활공을 펼 때 떨어지던 속도를 이 비율만 남긴다 (붕 뜨는 느낌)
+Hero.ComboLock,0.65,휘두르는 시간 중 이 비율이 지나야 다음 공격
+Hero.SprintMinSpeed,50,이보다 느리면 달리기 기력을 안 쓴다
+Hero.AttackHitMoment,0.25,휘두르는 시간 중 판정이 나는 시점
+Hero.AttackAimHeight,50,떡무지 몸 가운데 높이
+Hero.AttackCone,0.1,앞쪽 판정 (내적)
+Hero.AttackHeight,200,판정 높이 차
+Hero.CameraShake,10,흔들림 세기
+Hero.CameraShakeDecay,4,
 Audio.FullVolumeDistance,800,이 거리까지는 원래 크기
 Audio.FadeDistance,5000,그 뒤로 이만큼 가면 0
 Audio.MusicVolume,0.5,
