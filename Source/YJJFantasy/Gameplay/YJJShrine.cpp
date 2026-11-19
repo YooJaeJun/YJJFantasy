@@ -104,7 +104,7 @@ void AYJJShrine::BeginPlay()
 	CrystalMID = YJJShapes::Solid(this, Dormant, CrystalEmissiveDormant, CrystalRoughness);
 	const FVector Half(CrystalWidth, CrystalWidth, CrystalHalfHeight * 2.f);
 	YJJShapes::Add(this, CrystalPivot, EYJJShape::Cone, FVector(0, 0, CrystalHalfHeight), Half, CrystalMID, false);
-	YJJShapes::Add(this, CrystalPivot, EYJJShape::Cone, FVector(0, 0, -CrystalHalfHeight), Half, CrystalMID, false, FRotator(180, 0, 0));
+	YJJShapes::Add(this, CrystalPivot, EYJJShape::Cone, FVector(0, 0, -CrystalHalfHeight), Half, CrystalMID, false, UpsideDown);
 	for (int32 i = 0; i < ShardCount; ++i)
 	{
 		USceneComponent* ShardPivot = YJJShapes::Add(this, CrystalPivot, EYJJShape::Cone, FVector::ZeroVector, ShardSize, CrystalMID, false);

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Data/YJJData.h"
+#include "World/YJJPrefabShapes.h"
 #include "World/YJJShapes.h"
 #include "YJJWorldBuilder.generated.h"
 
@@ -92,7 +93,7 @@ private:
 	void AddStardustRing(const FVector& Center, float Radius, int32 Count);
 
 	/** 위에서 아래로 쏴서 땅 높이를 찾는다 */
-	bool GroundAt(const FVector& XY, float& OutZ, float From = 6000.f) const;
+	bool GroundAt(const FVector& XY, float& OutZ, float From = YJJPrefab::Ground::DefaultSearch) const;
 	FVector OnGround(const FVector& XY, float Lift = 0.f) const;
 
 	// ---- 데이터로 짓기 (Content/YJJFantasy/Data/Islands.csv, Placements.csv, VistaIslands.csv)

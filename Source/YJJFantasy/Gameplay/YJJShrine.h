@@ -91,6 +91,8 @@ private:
 	// ---- 떠 있는 수정
 	static constexpr float CrystalWidth = 200.f;
 	static constexpr float CrystalHalfHeight = 130.f;
+	/** 아래 원뿔은 뒤집어 팔면체를 만든다 */
+	inline static const FRotator UpsideDown = FRotator(180.f, 0.f, 0.f);
 	static constexpr float CrystalRoughness = 0.2f;
 	static constexpr float CrystalEmissiveDormant = 0.15f;
 	static constexpr int32 ShardCount = 5;

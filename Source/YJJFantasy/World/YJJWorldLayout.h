@@ -110,6 +110,9 @@ namespace YJJWorldLayout
 	constexpr float RingBlockTurn = 90.f;
 	constexpr float FullTurn = 360.f;
 	constexpr float QuarterTurn = 90.f;
+	constexpr float HalfTurn = 180.f;
+	/** 황금각 (라디안): 여러 개를 고르게 둘러 놓는다 */
+	constexpr float GoldenAngle = 2.399963f;
 
 	// ---- 결정적 난수(YJJShapes::Hash) 씨앗. 바꾸면 배치가 통째로 달라진다
 	constexpr int32 HashFarTreeAngle = 7;
