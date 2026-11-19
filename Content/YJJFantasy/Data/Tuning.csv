@@ -107,6 +107,27 @@ Mob.ChaseHopRate,1.4,쫓을 때 더 빨리 튄다
 Mob.MaxStep,120,이보다 높은 턱은 안 넘는다 (절벽 방지)
 Mob.ContactReach,40,부딪힘 판정 여유
 Mob.ContactHeight,130,
+Updraft.RadiusMargin,1.25,판정은 보이는 기둥보다 넉넉하게 (반지름 배율)
+Updraft.BelowMargin,200,
+Updraft.AboveMargin,300,
+Bounce.Radius,140,버섯 갓 위 판정 반지름 (크기 1 기준)
+Bounce.HeightMargin,40,
+Bounce.MaxRiseSpeed,50,이보다 빨리 올라가는 중이면 안 튕긴다
+Bounce.Cooldown,0.35,
+Bounce.Volume,0.9,
+Shrine.RiseTime,2.2,엔딩: 수정이 떠오르는 시간 (이후 빛기둥)
+Shrine.RiseHeight,700,
+Shrine.SunsetTime,8,노을이 다 지는 엔딩 시각
+Shrine.CameraFov,72,엔딩 카메라
+Shrine.CameraBlend,2,카메라 전환 시간
+Shrine.CameraOrbitSpeed,7,도/초
+Shrine.CameraDistance,2900,
+Shrine.CameraApproachTime,10,이 시간 동안 다가간다
+Shrine.CameraApproachSpeed,60,초당 cm
+Shrine.CameraHeight,500,
+Shrine.CameraRiseSpeed,40,
+Shrine.CameraLookAbove,250,수정보다 이만큼 위를 본다
+Shrine.CameraReturnDelay,9,엔딩 카드 뒤 주인공에게 돌아가기까지
 Audio.FullVolumeDistance,800,이 거리까지는 원래 크기
 Audio.FadeDistance,5000,그 뒤로 이만큼 가면 0
 Audio.MusicVolume,0.5,

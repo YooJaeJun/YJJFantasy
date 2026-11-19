@@ -57,6 +57,20 @@ ChestGlow,1|0.85|0.45,
 ChestLight,1|0.8|0.45,
 LanternUnlit,0.4|0.5|0.7,꺼진 등불 빛
 MobShadow,0.05|0.08|0.06,떡무지 발밑 그림자
+UpdraftWind,0.65|0.95|1,상승 기류
+UpdraftStreak,0.9|1|1,
+MushroomStem,0.98|0.94|0.85,튕김 버섯
+MushroomStemSide,0.92|0.86|0.74,
+MushroomDot,1|0.97|0.9,
+PlatformGrass,0.5|0.78|0.36,움직이는 발판
+PlatformRock,0.6|0.55|0.5,
+PlatformRockSide,0.55|0.5|0.48,
+PlatformGem,0.4|0.9|1,
+ShrineRuneDark,0.3|0.32|0.38,꺼진 룬 석판
+ShrineCrystalDormant,0.42|0.5|0.6,잠든 수정
+ShrineBeam,0.7|0.95|1,엔딩 빛기둥
+ShrineShock,0.8|0.95|1,
+ShrineSpark,1|0.85|0.5,
 FlowerDefault1,1|0.85|0.3,꾸미기 기본 꽃
 FlowerDefault2,1|0.55|0.7,
 FlowerDefault3,1|1|0.95,
