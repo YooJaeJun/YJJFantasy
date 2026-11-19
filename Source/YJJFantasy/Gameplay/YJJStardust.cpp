@@ -1,5 +1,6 @@
 #include "Gameplay/YJJStardust.h"
 
+#include "Data/YJJData.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/YJJAdventureSubsystem.h"
 #include "Core/YJJAudio.h"
@@ -9,14 +10,8 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "World/YJJShapes.h"
 
-namespace
-{
-	constexpr float MagnetRange = 420.f;
-	constexpr float CollectRange = 90.f;
-	// 줍는 소리가 연달아 나면 음이 조금씩 올라간다
-	float LastCollectTime = -100.f;
-	int32 ComboIndex = 0;
-}
+float AYJJStardust::LastCollectTime = TNumericLimits<float>::Lowest();
+int32 AYJJStardust::ComboIndex = 0;
 
 AYJJStardust::AYJJStardust()
 {
@@ -95,7 +90,7 @@ void AYJJStardust::Tick(float DeltaTime)
 	{
 		const FVector Target = Pawn->GetActorLocation() + FVector(0, 0, 20);
 		const float Dist = FVector::Dist(GetActorLocation(), Target);
-		if (!bMagnet && Dist < MagnetRange && PopVelocity.IsNearlyZero())
+		if (!bMagnet && Dist < FYJJData::Tune(TEXT("Stardust.MagnetRange")) && PopVelocity.IsNearlyZero())
 		{
 			bMagnet = true;
 		}
@@ -105,7 +100,7 @@ void AYJJStardust::Tick(float DeltaTime)
 			const FVector Dir = (Target - GetActorLocation()).GetSafeNormal();
 			MagnetVelocity = FMath::VInterpTo(MagnetVelocity, Dir * 2200.f, DeltaTime, 8.f);
 			SetActorLocation(GetActorLocation() + MagnetVelocity * DeltaTime);
-			if (FVector::Dist(GetActorLocation(), Target) < CollectRange)
+			if (FVector::Dist(GetActorLocation(), Target) < FYJJData::Tune(TEXT("Stardust.CollectRange")))
 			{
 				Collect();
 			}
@@ -128,9 +123,9 @@ void AYJJStardust::Collect()
 {
 	bCollected = true;
 	const float Now = GetWorld()->GetTimeSeconds();
-	ComboIndex = (Now - LastCollectTime < 1.2f) ? FMath::Min(ComboIndex + 1, 7) : 0;
+	ComboIndex = (Now - LastCollectTime < FYJJData::Tune(TEXT("Stardust.ComboWindow"))) ? FMath::Min(ComboIndex + 1, FMath::RoundToInt(FYJJData::Tune(TEXT("Stardust.ComboMax")))) : 0;
 	LastCollectTime = Now;
-	YJJAudio::Play(this, EYJJSound::Stardust, FVector::ZeroVector, 0.7f, FMath::Pow(2.f, ComboIndex * 2.f / 12.f));
+	YJJAudio::Play(this, EYJJSound::Stardust, FVector::ZeroVector, FYJJData::Tune(TEXT("Stardust.Volume")), FMath::Pow(2.f, ComboIndex * FYJJData::Tune(TEXT("Stardust.ComboSemitones")) / SemitonesPerOctave));
 	if (UYJJAdventureSubsystem* Adv = UYJJAdventureSubsystem::Get(this))
 	{
 		Adv->OnStardustCollected();

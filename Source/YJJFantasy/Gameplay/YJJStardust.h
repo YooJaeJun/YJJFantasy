@@ -28,6 +28,11 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	/** 줍는 소리가 연달아 나면 음이 조금씩 올라간다 (모든 별가루가 함께 쓴다) */
+	static float LastCollectTime;
+	static int32 ComboIndex;
+	static constexpr float SemitonesPerOctave = 12.f;
+
 	void Collect();
 
 	UPROPERTY()

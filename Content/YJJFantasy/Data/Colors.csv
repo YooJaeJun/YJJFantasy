@@ -1,0 +1,49 @@
+﻿Name,Linear,Note
+GrassHub,0.42|0.78|0.36,섬 잔디
+GrassMeadow,0.55|0.85|0.32,
+GrassCrystal,0.36|0.72|0.62,
+GrassWater,0.38|0.8|0.45,
+GrassForest,0.28|0.62|0.3,
+GrassRuins,0.62|0.78|0.42,
+RockWarm,0.62|0.56|0.5,섬 바위
+RockCool,0.5|0.52|0.6,
+RockDark,0.42|0.4|0.44,
+Marble,0.82|0.79|0.74,기둥·유적
+LeafBright,0.45|0.8|0.3,나뭇잎
+LeafDeep,0.2|0.55|0.32,
+LeafPink,1|0.7|0.8,
+LeafGold,0.98|0.75|0.3,
+CrystalCyan,0.35|0.85|1,수정섬 수정
+CrystalViolet,0.7|0.5|1,
+FlowerGold,1|0.85|0.3,꽃
+FlowerBlue,0.6|0.75|1,
+FlowerWhite,1|1|0.95,
+FlowerPink,1|0.5|0.6,
+FlowerYellow,1|0.85|0.25,
+FlowerViolet,0.75|0.6|1,
+FlowerPure,1|1|1,
+FlowerIce,0.6|0.9|1,
+FlowerLilac,0.85|0.75|1,
+FlowerSky,0.6|0.8|1,
+FlowerCream,1|0.9|0.5,
+FlowerOrange,0.95|0.6|0.4,
+RingCore,0.5|0.85|1,고리 유적 가운데 빛
+CloudTop,1|1|1,구름 윗면
+CloudPuffSide,0.78|0.84|0.98,뭉게구름 옆면
+CloudSeaSide,0.8|0.86|1,구름 바다 옆면
+HeroTrim,0.16|0.55|0.62,활공 날개 깃털 끝
+HeroLeather,0.42|0.27|0.17,검 손잡이
+HeroGold,0.95|0.72|0.3,검 코등이·날개 살
+HudInk,0.05|0.07|0.12|1,HUD 글자 테두리
+HudCream,1|0.97|0.9|1,HUD 글자
+HudGoldText,1|0.84|0.45|1,HUD 강조
+LanternStone,0.62|0.6|0.58,등불 받침 옆
+LanternStoneTop,0.78|0.76|0.72,등불 받침 위
+LanternBronze,0.55|0.38|0.2,등 갓
+ShrineMarble,0.82|0.79|0.74,성소 대리석
+ShrineMarbleSide,0.66|0.66|0.7,
+ShrineGold,0.85|0.62|0.22,
+ShrineCrystalColor,0.35|0.85|1,깨어난 성소 수정
+FlowerDefault1,1|0.85|0.3,꾸미기 기본 꽃
+FlowerDefault2,1|0.55|0.7,
+FlowerDefault3,1|1|0.95,

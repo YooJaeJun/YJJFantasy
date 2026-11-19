@@ -1,5 +1,7 @@
 #include "Player/YJJHero.h"
 
+#include "Data/YJJLoc.h"
+#include "Data/YJJData.h"
 #include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -28,43 +30,15 @@
 #include "YJJAssetPaths.h"
 #include "YJJFantasy.h"
 
-namespace
+USceneComponent* AYJJHero::MakePivot(AActor* Owner, USceneComponent* Parent, const FVector& Location)
 {
-	// 몸 색: 하얀 여행자 옷 + 청록 망토 + 금발
-	namespace HeroColor
-	{
-		const FLinearColor Skin(1.f, 0.82f, 0.7f);
-		const FLinearColor Cloth(0.95f, 0.93f, 0.88f);
-		const FLinearColor ClothShade(0.8f, 0.8f, 0.86f);
-		const FLinearColor Trim(0.16f, 0.55f, 0.62f);
-		const FLinearColor Hair(0.98f, 0.82f, 0.45f);
-		const FLinearColor HairShade(0.85f, 0.6f, 0.3f);
-		const FLinearColor Leather(0.42f, 0.27f, 0.17f);
-		const FLinearColor Gold(0.95f, 0.72f, 0.3f);
-		const FLinearColor ScarfColor(0.95f, 0.38f, 0.32f);
-		const FLinearColor EyeColor(0.1f, 0.45f, 0.5f);
-	}
-
-	constexpr float StaminaSprintCost = 20.f;
-	constexpr float StaminaGlideCost = 7.f;
-	constexpr float StaminaRegen = 32.f;
-	constexpr float AttackDuration = 0.34f;
-	constexpr float AttackRange = 260.f;
-
-	// 고양이 모델: Blender 키 1.55m -> 게임에서 약 1.7m, glTF 앞쪽(+Y)을 액터 앞(+X)으로
-	constexpr float HeroMeshScale = 1.1f;
-	constexpr float HeroMeshYaw = -90.f;
-
-	USceneComponent* MakePivot(AActor* Owner, USceneComponent* Parent, const FVector& Location)
-	{
-		USceneComponent* Pivot = NewObject<USceneComponent>(Owner);
-		Pivot->SetMobility(EComponentMobility::Movable);
-		Pivot->SetupAttachment(Parent);
-		Pivot->SetRelativeLocation(Location);
-		Pivot->RegisterComponent();
-		Owner->AddInstanceComponent(Pivot);
-		return Pivot;
-	}
+	USceneComponent* Pivot = NewObject<USceneComponent>(Owner);
+	Pivot->SetMobility(EComponentMobility::Movable);
+	Pivot->SetupAttachment(Parent);
+	Pivot->SetRelativeLocation(Location);
+	Pivot->RegisterComponent();
+	Owner->AddInstanceComponent(Pivot);
+	return Pivot;
 }
 
 AYJJHero::AYJJHero()
@@ -79,37 +53,24 @@ AYJJHero::AYJJHero()
 
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 	MoveComp->bOrientRotationToMovement = true;
-	MoveComp->RotationRate = FRotator(0.f, 720.f, 0.f);
-	MoveComp->MaxWalkSpeed = WalkSpeed;
-	MoveComp->MaxAcceleration = 3000.f;
-	MoveComp->JumpZVelocity = 880.f;
-	MoveComp->AirControl = 0.55f;
-	MoveComp->GravityScale = 1.75f;
-	MoveComp->BrakingDecelerationWalking = 2600.f;
-	MoveComp->BrakingDecelerationFalling = 200.f;
-	MoveComp->MaxStepHeight = 50.f;
-	MoveComp->SetWalkableFloorAngle(50.f);
 	MoveComp->bCanWalkOffLedgesWhenCrouching = true;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 430.f;
 	CameraBoom->SocketOffset = FVector(0.f, 40.f, 70.f);
 	CameraBoom->bUsePawnControlRotation = true;
 	CameraBoom->bEnableCameraLag = true;
-	CameraBoom->CameraLagSpeed = 10.f;
 	CameraBoom->ProbeSize = 16.f;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
-	FollowCamera->FieldOfView = 80.f;
 }
 
 void AYJJHero::BeginPlay()
 {
 	Super::BeginPlay();
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	ApplyTuning();
 	Stamina = GetMaxStamina();
 	LastYaw = GetActorRotation().Yaw;
 	BuildBody();
@@ -123,12 +84,41 @@ void AYJJHero::BeginPlay()
 	}
 }
 
+void AYJJHero::ApplyTuning()
+{
+	// Content/YJJFantasy/Data/Tuning.csv 의 Hero.* (게임 중 yjj.ReloadData 후 다시 시작하면 반영)
+	WalkSpeed = FYJJData::Tune(TEXT("Hero.WalkSpeed"));
+	SprintSpeed = FYJJData::Tune(TEXT("Hero.SprintSpeed"));
+	GlideSpeed = FYJJData::Tune(TEXT("Hero.GlideSpeed"));
+	GlideSinkSpeed = FYJJData::Tune(TEXT("Hero.GlideSinkSpeed"));
+	UpdraftSpeed = FYJJData::Tune(TEXT("Hero.UpdraftSpeed"));
+	BaseStamina = FYJJData::Tune(TEXT("Hero.BaseStamina"));
+	LookSensitivity = FYJJData::Tune(TEXT("Hero.LookSensitivity"));
+	MaxHealth = FMath::RoundToInt(FYJJData::Tune(TEXT("Hero.MaxHealth")));
+	Health = MaxHealth;
+
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	MoveComp->RotationRate = FRotator(0.f, FYJJData::Tune(TEXT("Hero.TurnRate")), 0.f);
+	MoveComp->MaxWalkSpeed = WalkSpeed;
+	MoveComp->MaxAcceleration = FYJJData::Tune(TEXT("Hero.Acceleration"));
+	MoveComp->JumpZVelocity = FYJJData::Tune(TEXT("Hero.JumpZ"));
+	MoveComp->AirControl = FYJJData::Tune(TEXT("Hero.AirControl"));
+	MoveComp->GravityScale = FYJJData::Tune(TEXT("Hero.Gravity"));
+	MoveComp->BrakingDecelerationWalking = FYJJData::Tune(TEXT("Hero.BrakingWalk"));
+	MoveComp->BrakingDecelerationFalling = FYJJData::Tune(TEXT("Hero.BrakingFall"));
+	MoveComp->MaxStepHeight = FYJJData::Tune(TEXT("Hero.MaxStepHeight"));
+	MoveComp->SetWalkableFloorAngle(FYJJData::Tune(TEXT("Hero.WalkableFloorAngle")));
+	CameraBoom->TargetArmLength = FYJJData::Tune(TEXT("Hero.CameraArm"));
+	CameraBoom->CameraLagSpeed = FYJJData::Tune(TEXT("Hero.CameraLag"));
+	FollowCamera->FieldOfView = FYJJData::Tune(TEXT("Hero.CameraFov"));
+}
+
 // ============================================================ 몸 조립
 
 void AYJJHero::BuildBody()
 {
-	UMaterialInterface* LeatherMat = YJJShapes::Solid(this, HeroColor::Leather, 0.f, 0.7f);
-	UMaterialInterface* GoldMat = YJJShapes::Solid(this, HeroColor::Gold, 0.1f, 0.35f);
+	UMaterialInterface* LeatherMat = YJJShapes::Solid(this, FYJJData::Color(TEXT("HeroLeather")), 0.f, 0.7f);
+	UMaterialInterface* GoldMat = YJJShapes::Solid(this, FYJJData::Color(TEXT("HeroGold")), 0.1f, 0.35f);
 
 	// 발바닥 = 캡슐 아래 (-96). 기울기·찌그러짐은 이 축에 준다
 	Visual = MakePivot(this, RootComponent, FVector(0, 0, -96));
@@ -186,7 +176,7 @@ void AYJJHero::BuildBody()
 	Glider = MakePivot(this, Visual, FVector(-10, 0, 165));
 	// 깃털 세 겹 날개: 앞쪽이 길고 뒤로 갈수록 짧아진다. 끝은 청록색
 	UMaterialInterface* Feather = YJJShapes::Surface(this, FLinearColor(1.f, 0.98f, 0.94f), FLinearColor(0.85f, 0.9f, 0.95f), 0.2f, 0.7f);
-	UMaterialInterface* FeatherTip = YJJShapes::Surface(this, FLinearColor(0.45f, 0.85f, 0.85f), HeroColor::Trim, 0.3f, 0.6f);
+	UMaterialInterface* FeatherTip = YJJShapes::Surface(this, FLinearColor(0.45f, 0.85f, 0.85f), FYJJData::Color(TEXT("HeroTrim")), 0.3f, 0.6f);
 	for (int32 Side = -1; Side <= 1; Side += 2)
 	{
 		const FRotator Sweep(0, Side * -14.f, Side * -12.f);
@@ -238,8 +228,8 @@ void AYJJHero::UpdateAnimation()
 		{
 			CurrentAnim = EAnim::Count;
 		}
-		const float Len = Anims.IsValidIndex((int32)Attack) && Anims[(int32)Attack] ? Anims[(int32)Attack]->GetPlayLength() : AttackDuration;
-		PlayAnim(Attack, Len / AttackDuration);
+		const float Len = Anims.IsValidIndex((int32)Attack) && Anims[(int32)Attack] ? Anims[(int32)Attack]->GetPlayLength() : FYJJData::Tune(TEXT("Hero.AttackDuration"));
+		PlayAnim(Attack, Len / FYJJData::Tune(TEXT("Hero.AttackDuration")));
 	}
 	else if (SinceHurt < 0.4f)
 	{
@@ -502,21 +492,21 @@ AActor* AYJJHero::FindInteractable(FString* OutPrompt) const
 	{
 		if (It->CanInteract(P))
 		{
-			Consider(*It, FString::Printf(TEXT("%s 밝히기"), *It->GetLanternName()));
+			Consider(*It, FYJJLoc::Format(TEXT("Prompt.LightLantern"), { It->GetLanternName() }));
 		}
 	}
 	for (TActorIterator<AYJJChest> It(GetWorld()); It; ++It)
 	{
 		if (It->CanInteract(P))
 		{
-			Consider(*It, TEXT("보물 상자 열기"));
+			Consider(*It, FYJJLoc::Get(TEXT("Prompt.OpenChest")));
 		}
 	}
 	for (TActorIterator<AYJJShrine> It(GetWorld()); It; ++It)
 	{
 		if (It->CanInteract(P))
 		{
-			Consider(*It, TEXT("성소에 빛을 되돌리기"));
+			Consider(*It, FYJJLoc::Get(TEXT("Prompt.Shrine")));
 		}
 	}
 	return Best;
@@ -563,7 +553,7 @@ void AYJJHero::DoAttack()
 		return;
 	}
 	// 마지막 1/3 구간에선 다음 공격을 이어서 할 수 있다 (콤보)
-	if (AttackTime >= 0.f && AttackTime < AttackDuration * 0.65f)
+	if (AttackTime >= 0.f && AttackTime < FYJJData::Tune(TEXT("Hero.AttackDuration")) * 0.65f)
 	{
 		return;
 	}
@@ -576,7 +566,7 @@ void AYJJHero::DoAttack()
 	// 공격하는 순간 살짝 앞으로 내딛는다
 	if (!GetCharacterMovement()->IsFalling())
 	{
-		LaunchCharacter(GetActorForwardVector() * 450.f, false, false);
+		LaunchCharacter(GetActorForwardVector() * FYJJData::Tune(TEXT("Hero.AttackLunge")), false, false);
 	}
 }
 
@@ -589,7 +579,7 @@ void AYJJHero::TakeHit(const FVector& From)
 		return;
 	}
 	Health = FMath::Max(0, Health - 1);
-	Invulnerable = 1.3f;
+	Invulnerable = FYJJData::Tune(TEXT("Hero.InvulnerableAfterHit"));
 	HurtFlash = 1.f;
 	SinceHurt = 0.f;
 	CameraShake = 1.f;
@@ -598,7 +588,7 @@ void AYJJHero::TakeHit(const FVector& From)
 	FVector Away = GetActorLocation() - From;
 	Away.Z = 0.f;
 	// 섬 밖으로 날아가지 않을 만큼만 밀어낸다
-	LaunchCharacter(Away.GetSafeNormal() * 420.f + FVector(0, 0, 380.f), true, true);
+	LaunchCharacter(Away.GetSafeNormal() * FYJJData::Tune(TEXT("Hero.KnockbackSide")) + FVector(0, 0, FYJJData::Tune(TEXT("Hero.KnockbackUp"))), true, true);
 	YJJAudio::Play(this, EYJJSound::Hurt);
 	UE_LOG(LogYJJFantasy, Display, TEXT("[Hero] hit health=%d"), Health);
 
@@ -632,7 +622,7 @@ void AYJJHero::Respawn()
 		Health = MaxHealth;
 	}
 	bDead = false;
-	Invulnerable = 1.5f;
+	Invulnerable = FYJJData::Tune(TEXT("Hero.InvulnerableAfterRespawn"));
 	Stamina = GetMaxStamina();
 	bExhausted = false;
 	YJJAudio::Play(this, EYJJSound::Respawn, FVector::ZeroVector, 0.7f);
@@ -651,8 +641,8 @@ void AYJJHero::UpdateRespawn(float DeltaTime)
 	if (RespawnTimer >= 0.f)
 	{
 		RespawnTimer += DeltaTime;
-		ScreenFade = FMath::Min(1.f, RespawnTimer / 0.45f);
-		if (RespawnTimer >= 0.6f)
+		ScreenFade = FMath::Min(1.f, RespawnTimer / FYJJData::Tune(TEXT("Hero.RespawnFadeOut")));
+		if (RespawnTimer >= FYJJData::Tune(TEXT("Hero.RespawnDelay")))
 		{
 			RespawnTimer = -1.f;
 			Respawn();
@@ -660,7 +650,7 @@ void AYJJHero::UpdateRespawn(float DeltaTime)
 	}
 	else
 	{
-		ScreenFade = FMath::Max(0.f, ScreenFade - DeltaTime / 0.6f);
+		ScreenFade = FMath::Max(0.f, ScreenFade - DeltaTime / FYJJData::Tune(TEXT("Hero.RespawnFadeIn")));
 	}
 }
 
@@ -702,10 +692,10 @@ void AYJJHero::Tick(float DeltaTime)
 	HurtFlash = FMath::Max(0.f, HurtFlash - DeltaTime * 2.5f);
 	SinceHurt += DeltaTime;
 	// 한동안 안 맞으면 체력이 천천히 찬다
-	if (!bDead && Health < MaxHealth && SinceHurt > 8.f)
+	if (!bDead && Health < MaxHealth && SinceHurt > FYJJData::Tune(TEXT("Hero.RegenDelay")))
 	{
 		Health++;
-		SinceHurt = 4.f;
+		SinceHurt = FYJJData::Tune(TEXT("Hero.RegenDelay")) - FYJJData::Tune(TEXT("Hero.RegenInterval"));
 	}
 }
 
@@ -729,30 +719,30 @@ void AYJJHero::UpdateMovement(float DeltaTime)
 	if (bGliding)
 	{
 		MoveComp->GravityScale = 0.f;
-		MoveComp->AirControl = 1.f;
+		MoveComp->AirControl = FYJJData::Tune(TEXT("Hero.GlideAirControl"));
 		MoveComp->MaxWalkSpeed = GlideSpeed;
 		FVector V = MoveComp->Velocity;
 		const float TargetZ = bInUpdraft ? UpdraftSpeed : -GlideSinkSpeed;
-		V.Z = FMath::FInterpTo(V.Z, TargetZ, DeltaTime, bInUpdraft ? 2.5f : 4.f);
+		V.Z = FMath::FInterpTo(V.Z, TargetZ, DeltaTime, bInUpdraft ? FYJJData::Tune(TEXT("Hero.UpdraftBlend")) : FYJJData::Tune(TEXT("Hero.GlideSinkBlend")));
 		MoveComp->Velocity = V;
 
 		// 입력이 없어도 앞으로 미끄러진다
 		if (MoveInput.IsNearlyZero() && !bInUpdraft)
 		{
-			AddMovementInput(GetActorForwardVector(), 0.45f);
+			AddMovementInput(GetActorForwardVector(), FYJJData::Tune(TEXT("Hero.GlideAutoForward")));
 		}
 	}
 	else
 	{
-		MoveComp->GravityScale = 1.75f;
-		MoveComp->AirControl = 0.55f;
+		MoveComp->GravityScale = FYJJData::Tune(TEXT("Hero.Gravity"));
+		MoveComp->AirControl = FYJJData::Tune(TEXT("Hero.AirControl"));
 		bSprinting = bSprintHeld && !bExhausted && !bFalling && Stamina > 0.f && GetVelocity().Size2D() > 50.f;
 		MoveComp->MaxWalkSpeed = bSprinting ? SprintSpeed : WalkSpeed;
 
 		// 활공 없이 상승 기류에 들어가도 조금 떠오른다 (활공하라는 힌트)
-		if (bInUpdraft && bFalling && MoveComp->Velocity.Z < 300.f)
+		if (bInUpdraft && bFalling && MoveComp->Velocity.Z < FYJJData::Tune(TEXT("Hero.UpdraftNudgeSpeed")))
 		{
-			MoveComp->Velocity.Z = FMath::FInterpTo(MoveComp->Velocity.Z, 300.f, DeltaTime, 3.f);
+			MoveComp->Velocity.Z = FMath::FInterpTo(MoveComp->Velocity.Z, FYJJData::Tune(TEXT("Hero.UpdraftNudgeSpeed")), DeltaTime, FYJJData::Tune(TEXT("Hero.UpdraftNudgeBlend")));
 		}
 	}
 }
@@ -763,17 +753,17 @@ void AYJJHero::UpdateStamina(float DeltaTime)
 	float Cost = 0.f;
 	if (bGliding && !bWasInUpdraft)
 	{
-		Cost = StaminaGlideCost;
+		Cost = FYJJData::Tune(TEXT("Hero.StaminaGlideCost"));
 	}
 	else if (bSprinting)
 	{
-		Cost = StaminaSprintCost;
+		Cost = FYJJData::Tune(TEXT("Hero.StaminaSprintCost"));
 	}
 
 	if (Cost > 0.f)
 	{
 		Stamina = FMath::Max(0.f, Stamina - Cost * DeltaTime);
-		StaminaRegenDelay = 0.6f;
+		StaminaRegenDelay = FYJJData::Tune(TEXT("Hero.StaminaRegenDelay"));
 		if (Stamina <= 0.f)
 		{
 			bExhausted = true;
@@ -785,10 +775,10 @@ void AYJJHero::UpdateStamina(float DeltaTime)
 		StaminaRegenDelay -= DeltaTime;
 		if (StaminaRegenDelay <= 0.f)
 		{
-			Stamina = FMath::Min(MaxStamina, Stamina + StaminaRegen * DeltaTime);
+			Stamina = FMath::Min(MaxStamina, Stamina + FYJJData::Tune(TEXT("Hero.StaminaRegen")) * DeltaTime);
 		}
 	}
-	if (bExhausted && Stamina > MaxStamina * 0.3f)
+	if (bExhausted && Stamina > MaxStamina * FYJJData::Tune(TEXT("Hero.ExhaustRecoverRatio")))
 	{
 		bExhausted = false;
 	}
@@ -801,7 +791,7 @@ void AYJJHero::UpdateAttack(float DeltaTime)
 		return;
 	}
 	AttackTime += DeltaTime;
-	const float A = AttackTime / AttackDuration;
+	const float A = AttackTime / FYJJData::Tune(TEXT("Hero.AttackDuration"));
 
 	// 베기 궤적: 휘두르는 방향으로 돌면서 사라진다
 	const float Dir = (AttackCombo == 1) ? -1.f : 1.f;
@@ -822,7 +812,7 @@ void AYJJHero::UpdateAttack(float DeltaTime)
 				continue;
 			}
 			const FVector To = It->GetActorLocation() + FVector(0, 0, 50) - P;
-			if (To.Size() < AttackRange + It->GetRadius() && FVector::DotProduct(To.GetSafeNormal2D(), Fwd) > 0.1f && FMath::Abs(To.Z) < 200.f)
+			if (To.Size() < FYJJData::Tune(TEXT("Hero.AttackRange")) + It->GetRadius() && FVector::DotProduct(To.GetSafeNormal2D(), Fwd) > 0.1f && FMath::Abs(To.Z) < 200.f)
 			{
 				It->TakeHit(P);
 				bHit = true;
@@ -949,29 +939,29 @@ void AYJJHero::UpdateCamera(float DeltaTime)
 	const UYJJAdventureSubsystem* Adv = UYJJAdventureSubsystem::Get(this);
 	const bool bFinale = Adv && Adv->GetPhase() == EYJJPhase::Finale;
 
-	float TargetArm = 430.f;
-	float TargetFov = 80.f;
+	float TargetArm = FYJJData::Tune(TEXT("Hero.CameraArm"));
+	float TargetFov = FYJJData::Tune(TEXT("Hero.CameraFov"));
 	if (bGliding)
 	{
-		TargetArm = 560.f;
-		TargetFov = 92.f;
+		TargetArm = FYJJData::Tune(TEXT("Hero.CameraArmGlide"));
+		TargetFov = FYJJData::Tune(TEXT("Hero.CameraFovGlide"));
 	}
 	else if (bSprinting)
 	{
-		TargetArm = 470.f;
-		TargetFov = 88.f;
+		TargetArm = FYJJData::Tune(TEXT("Hero.CameraArmSprint"));
+		TargetFov = FYJJData::Tune(TEXT("Hero.CameraFovSprint"));
 	}
 	if (bFinale)
 	{
-		TargetArm = 1500.f;
-		TargetFov = 75.f;
+		TargetArm = FYJJData::Tune(TEXT("Hero.CameraArmFinale"));
+		TargetFov = FYJJData::Tune(TEXT("Hero.CameraFovFinale"));
 	}
 	// 엔딩 땐 기둥에 카메라가 막혀 영웅 등만 보이지 않게
 	CameraBoom->bDoCollisionTest = !bFinale;
-	TargetFov += FMath::Clamp((Speed - 900.f) / 600.f, 0.f, 1.f) * 4.f;
+	TargetFov += FMath::Clamp((Speed - FYJJData::Tune(TEXT("Hero.CameraSpeedFovFrom"))) / FYJJData::Tune(TEXT("Hero.CameraSpeedFovRange")), 0.f, 1.f) * FYJJData::Tune(TEXT("Hero.CameraSpeedFovAdd"));
 
-	CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, 3.f);
-	FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView, TargetFov, DeltaTime, 4.f));
+	CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, TargetArm, DeltaTime, FYJJData::Tune(TEXT("Hero.CameraArmBlend")));
+	FollowCamera->SetFieldOfView(FMath::FInterpTo(FollowCamera->FieldOfView, TargetFov, DeltaTime, FYJJData::Tune(TEXT("Hero.CameraFovBlend"))));
 
 	CameraShake = FMath::Max(0.f, CameraShake - DeltaTime * 4.f);
 	const float Shake = CameraShake * CameraShake * 10.f;

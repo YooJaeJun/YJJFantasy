@@ -37,6 +37,11 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	/** 제단 모양: 룬 타일 수·반지름, 제단 윗면 높이 */
+	static constexpr int32 RuneCount = 5;
+	static constexpr float RuneRadius = 380.f;
+	static constexpr float TopZ = 120.f;
+
 	bool bAwake = false;
 	bool bFinale = false;
 	float Time = 0.f;

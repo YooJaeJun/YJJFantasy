@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "HAL/IConsoleManager.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "YJJAutoPilot.generated.h"
 
@@ -25,6 +26,12 @@ public:
 	void StartAutoPlay();
 
 private:
+	// 콘솔 명령: yjj.Tour, yjj.AutoPlay, yjj.Toon <Ref> <Strength> <Outline>, yjj.LightAll
+	static FAutoConsoleCommandWithWorld TourCommand;
+	static FAutoConsoleCommandWithWorld PlayCommand;
+	static FAutoConsoleCommandWithWorldAndArgs ToonCommand;
+	static FAutoConsoleCommandWithWorld LightAllCommand;
+
 	struct FStep
 	{
 		float Wait = 1.f;

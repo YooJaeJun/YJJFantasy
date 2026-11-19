@@ -1,5 +1,6 @@
 #include "Core/YJJAdventureSubsystem.h"
 
+#include "Data/YJJLoc.h"
 #include "Core/YJJAudio.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
@@ -132,10 +133,10 @@ void UYJJAdventureSubsystem::OnLanternLit(AYJJLantern* Lantern)
 {
 	const int32 Lit = GetLanternsLit();
 	UE_LOG(LogYJJFantasy, Display, TEXT("[Adventure] lantern %s lit (%d/%d) t=%.0fs"), *Lantern->GetLanternName(), Lit, Lanterns.Num(), PlayTime);
-	Toast(FString::Printf(TEXT("%s에 불이 켜졌다  (%d/%d)"), *Lantern->GetLanternName(), Lit, Lanterns.Num()), FLinearColor(1.f, 0.85f, 0.45f), 4.f);
+	Toast(FYJJLoc::Format(TEXT("Toast.LanternLit"), { Lantern->GetLanternName(), Lit, Lanterns.Num() }), FLinearColor(1.f, 0.85f, 0.45f), 4.f);
 	if (Lit == Lanterns.Num())
 	{
-		Toast(TEXT("모든 등불이 깨어났다! 바람의 성소로 돌아가자"), FLinearColor(0.6f, 0.95f, 1.f), 6.f);
+		Toast(FYJJLoc::Get(TEXT("Toast.AllLanterns")), FLinearColor(0.6f, 0.95f, 1.f), 6.f);
 		if (AYJJShrine* Shrine = Shrine_.Get())
 		{
 			Shrine->SetAwake(true);
@@ -149,7 +150,7 @@ void UYJJAdventureSubsystem::OnStardustCollected()
 	Stardust++;
 	if (GetStaminaBonus() > OldBonus)
 	{
-		Toast(TEXT("별가루의 힘으로 기력 상한이 늘었다!"), FLinearColor(0.7f, 0.9f, 1.f), 3.5f);
+		Toast(FYJJLoc::Get(TEXT("Toast.StaminaUp")), FLinearColor(0.7f, 0.9f, 1.f), 3.5f);
 	}
 }
 
@@ -157,7 +158,7 @@ void UYJJAdventureSubsystem::OnChestOpened()
 {
 	ChestsOpened++;
 	UE_LOG(LogYJJFantasy, Display, TEXT("[Adventure] chest %d/%d"), ChestsOpened, ChestTotal);
-	Toast(FString::Printf(TEXT("보물 상자를 찾았다!  (%d/%d)"), ChestsOpened, ChestTotal), FLinearColor(1.f, 0.8f, 0.4f), 3.5f);
+	Toast(FYJJLoc::Format(TEXT("Toast.ChestFound"), { ChestsOpened, ChestTotal }), FLinearColor(1.f, 0.8f, 0.4f), 3.5f);
 }
 
 void UYJJAdventureSubsystem::SetCheckpoint(const FVector& Location, float Yaw)
@@ -226,13 +227,13 @@ FString UYJJAdventureSubsystem::GetObjectiveText() const
 	case EYJJPhase::Explore:
 		if (GetLanternsLit() < Lanterns.Num())
 		{
-			return FString::Printf(TEXT("하늘섬의 바람 등불을 밝히자  %d / %d"), GetLanternsLit(), Lanterns.Num());
+			return FYJJLoc::Format(TEXT("Goal.Lanterns"), { GetLanternsLit(), Lanterns.Num() });
 		}
-		return TEXT("바람의 성소로 돌아가 빛을 되살리자");
+		return FYJJLoc::Get(TEXT("Goal.Shrine"));
 	case EYJJPhase::Finale:
 		return TEXT("");
 	case EYJJPhase::Ended:
-		return TEXT("자유롭게 하늘섬을 둘러보자");
+		return FYJJLoc::Get(TEXT("Goal.Free"));
 	}
 	return TEXT("");
 }

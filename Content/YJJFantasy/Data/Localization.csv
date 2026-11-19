@@ -1,0 +1,34 @@
+﻿Key,ko,en,Note
+Zone.Hub,바람의 성소,Shrine of the Wind,시작 섬
+Zone.Hub.Sub,빛을 잃은 하늘의 심장,The dimmed heart of the sky,
+Zone.Meadow,들꽃 언덕,Wildflower Hill,
+Zone.Meadow.Sub,바람이 꽃잎을 나르는 곳,Where the wind carries petals,
+Zone.Crystal,수정섬,Crystal Isle,
+Zone.Crystal.Sub,잠든 별빛이 자라는 섬,Where sleeping starlight grows,
+Zone.Waterfall,폭포 정원,Waterfall Garden,
+Zone.Waterfall.Sub,하늘 아래로 흐르는 강,A river that falls beneath the sky,
+Zone.Forest,고목의 숲,Elder Tree Forest,
+Zone.Forest.Sub,천 년을 자란 나무의 그늘,Shade of a thousand-year tree,
+Zone.Ruins,하늘 유적,Sky Ruins,
+Zone.Ruins.Sub,바람을 섬기던 옛 신전,An old temple of the wind,
+Lantern.Meadow,들꽃 언덕의 등불,Wildflower Lantern,
+Lantern.Crystal,수정섬의 등불,Crystal Lantern,
+Lantern.Waterfall,폭포 정원의 등불,Waterfall Lantern,
+Lantern.Forest,고목의 등불,Elder Tree Lantern,
+Lantern.Ruins,하늘 유적의 등불,Ruins Lantern,
+Prompt.LightLantern,{0} 밝히기,Light the {0},{0} = 등불 이름
+Prompt.OpenChest,보물 상자 열기,Open the treasure chest,
+Prompt.Shrine,성소에 빛을 되돌리기,Return the light to the shrine,
+Toast.LanternLit,{0}에 불이 켜졌다  ({1}/{2}),{0} is lit  ({1}/{2}),"{0} 등불 이름, {1} 켠 수, {2} 전체"
+Toast.AllLanterns,모든 등불이 깨어났다! 바람의 성소로 돌아가자,Every lantern is awake! Return to the Shrine of the Wind,
+Toast.StaminaUp,별가루의 힘으로 기력 상한이 늘었다!,Stardust raised your max stamina!,
+Toast.ChestFound,보물 상자를 찾았다!  ({0}/{1}),Found a treasure chest!  ({0}/{1}),
+Goal.Lanterns,하늘섬의 바람 등불을 밝히자  {0} / {1},Light the wind lanterns of the sky isles  {0} / {1},
+Goal.Shrine,바람의 성소로 돌아가 빛을 되살리자,Return to the shrine and restore the light,
+Goal.Free,자유롭게 하늘섬을 둘러보자,Explore the sky isles freely,엔딩 뒤
+Title.Name,하늘섬의 등불,Lanterns of the Sky Isles,게임 제목
+Title.Sub,빛을 잃은 바람의 성소. 다섯 섬의 등불을 다시 밝히자,The Shrine of the Wind has lost its light. Rekindle the lanterns of five isles,
+Title.Controls,WASD 이동   Shift 달리기   Space 점프 · 공중에서 활공   좌클릭 공격   E 상호작용,WASD Move   Shift Sprint   Space Jump · Glide in air   LMB Attack   E Interact,
+Ending.Title,하늘섬에 다시 바람이 분다,The wind blows over the sky isles again,
+Ending.Stats,모험 시간 {0}분 {1}초      별가루 {2} / {3}      보물 상자 {4} / {5},Time {0}m {1}s      Stardust {2} / {3}      Chests {4} / {5},{1} 은 두 자리 초
+Ending.Thanks,플레이해 주셔서 고마워요,Thank you for playing,

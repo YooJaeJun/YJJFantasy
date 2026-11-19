@@ -22,11 +22,24 @@ enum class EYJJSound : uint8
 	ZoneEnter,		// 새 섬 도착
 };
 
-namespace YJJAudio
+class USoundBase;
+
+/** 소리 재생 도우미. 모든 함수는 정적. 소리 에셋은 /Game/YJJFantasy/Audio/<이름> */
+class YJJFANTASY_API YJJAudio
 {
-	/** Location이 0이면 2D로 재생 */
-	void Play(const UObject* WorldContext, EYJJSound Sound, const FVector& Location = FVector::ZeroVector, float Volume = 1.f, float Pitch = 1.f);
+public:
+	/** Location이 0이면 2D로 재생 (멀수록 작게) */
+	static void Play(const UObject* WorldContext, EYJJSound Sound, const FVector& Location = FVector::ZeroVector, float Volume = 1.f, float Pitch = 1.f);
 
 	/** 배경음 + 바람 소리 (반복) */
-	void StartAmbience(const UObject* WorldContext);
-}
+	static void StartAmbience(const UObject* WorldContext);
+
+private:
+	static const TCHAR* SoundName(EYJJSound Sound);
+	static USoundBase* LoadSound(const TCHAR* Name);
+
+	/** 거리 감쇠를 이 아래로는 무시 */
+	static constexpr float MinAudibleScale = 0.02f;
+
+	static TMap<FString, TWeakObjectPtr<USoundBase>> Cache;
+};

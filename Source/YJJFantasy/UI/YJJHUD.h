@@ -21,6 +21,13 @@ public:
 	virtual void DrawHUD() override;
 
 private:
+	/** 주아체에 없는 글자를 채우는 엔진 기본 글꼴 */
+	static const UFont* BaseFont();
+	static FLinearColor WithAlpha(FLinearColor C, float A);
+
+	/** 한 번 읽어 GC 루트에 올려 둔다 */
+	static UFont* FallbackFont;
+
 	enum class EAlign : uint8 { Left, Center, Right };
 
 	float S(float V) const { return V * UIScale; }

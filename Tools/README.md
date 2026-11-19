@@ -17,7 +17,23 @@ powershell -File Tools/Content/BuildContent.ps1
 - `Tools/Audio/generate_audio.py` : 효과음·배경음 합성 (외부 음원 없음)
 - `Tools/Content/build_content.py` : 머티리얼(표면·발광·물·셀 셰이딩), 소리·AI 모델 임포트, 빈 맵
 
-월드(섬, 나무, 유적, 등불, 슬라임…)는 에셋이 아니라 코드(`Source/YJJFantasy/World/YJJWorldBuilder.cpp`)가 게임 시작 때 짓는다.
+월드(섬, 나무, 유적, 등불, 떡무지…)는 에셋이 아니라 코드(`Source/YJJFantasy/World/YJJWorldBuilder.cpp`)가 게임 시작 때 데이터를 읽어 짓는다.
+
+## 데이터·글자 (`Content/YJJFantasy/Data/*.csv`, UTF-8 BOM)
+
+코드에 수치·배치·글자를 박지 않는다. 고치면 게임을 다시 시작하거나 콘솔 `yjj.ReloadData` (섬 배치는 다시 시작해야 반영).
+
+| 파일 | 내용 |
+| --- | --- |
+| `Localization.csv` | 화면 글자 (Key, ko, en, Note). 언어는 명령줄 `-yjjlang=en` |
+| `Tuning.csv` | 이동·기력·공격·체력·카메라·떡무지·별가루·소리 수치 (`FYJJData::Tune`) |
+| `Colors.csv` | 색상표, 선형 색 `R\|G\|B` (`FYJJData::Color`) |
+| `Islands.csv` | 섬 위치·크기·잔디/바위 색·꽃·구역 이름 키 |
+| `Placements.csv` | 섬 위 모든 것. `Type`별로 쓰는 열이 다르다 (Note 열 참고). `Island=World`면 섬 좌표 그대로, `Ground=1`이면 땅 위로. `Terrain`은 풀보다 먼저, `Shape`는 나중 |
+| `VistaIslands.csv` | 닿을 수 없는 먼 섬 |
+| `Tour.csv` | 투어 스크린샷 지점 |
+
+코드 쪽 창구: `Source/YJJFantasy/Data/YJJData.h` (`FYJJData`), `YJJLoc.h` (`FYJJLoc`). 먼 풍경 생성 상수는 `World/YJJWorldLayout.h`.
 
 ## 실행·테스트
 
@@ -27,7 +43,7 @@ powershell -File Tools/RunGame.ps1 -Mode tour   # 명소 스크린샷 -> Saved/S
 powershell -File Tools/RunGame.ps1 -Mode play   # 자동 플레이 검증 -> 로그 [AutoPilot] PASS/FAIL
 ```
 
-게임 중 콘솔(`~`): `yjj.Tour`, `yjj.AutoPlay`, `yjj.LightAll`, `yjj.Toon <Ref> <Strength> <Outline>`
+게임 중 콘솔(`~`): `yjj.Tour`, `yjj.AutoPlay`, `yjj.LightAll`, `yjj.Toon <Ref> <Strength> <Outline>`, `yjj.ReloadData`
 
 ## AI 3D 모델 (무료)
 

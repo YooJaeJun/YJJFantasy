@@ -1,0 +1,7 @@
+﻿Name,X,Y,Z,Radius,Grass,Rock,Seed,FlowerCount,FlowerColors,ZoneRadius,NameKey,SubtitleKey,Note
+Hub,0,0,0,2700,GrassHub,RockWarm,1,150,FlowerGold;FlowerBlue;FlowerWhite,2900,Zone.Hub,Zone.Hub.Sub,"시작 섬. 동 징검돌, 북 버섯, 서 상승 기류, 남 절벽"
+Meadow,6900,1300,320,2000,GrassMeadow,RockWarm,2,360,FlowerPink;FlowerYellow;FlowerViolet;FlowerPure,2100,Zone.Meadow,Zone.Meadow.Sub,완만한 언덕과 꽃밭
+Crystal,-2700,7700,1400,1800,GrassCrystal,RockCool,3,160,FlowerIce;FlowerLilac,1900,Zone.Crystal,Zone.Crystal.Sub,움직이는 발판 두 개를 건너 도착
+Waterfall,-7700,-1900,2800,2100,GrassWater,RockWarm,4,220,FlowerPure;FlowerSky;FlowerGold,2200,Zone.Waterfall,Zone.Waterfall.Sub,계단식 대지와 폭포
+Forest,2500,-8200,-900,2300,GrassForest,RockDark,5,150,FlowerCream;FlowerOrange,2400,Zone.Forest,Zone.Forest.Sub,거대한 고목을 나선 발판으로
+Ruins,9600,-5300,4300,1900,GrassRuins,RockCool,6,120,FlowerGold;FlowerPure,2000,Zone.Ruins,Zone.Ruins.Sub,5층 신전 탑

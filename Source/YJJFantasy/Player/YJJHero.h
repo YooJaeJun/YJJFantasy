@@ -101,6 +101,14 @@ protected:
 	float LookSensitivity = 1.f;
 
 private:
+	/** 고양이 모델: Blender 키 1.55m -> 게임에서 약 1.7m, glTF 앞쪽(+Y)을 액터 앞(+X)으로 */
+	static constexpr float HeroMeshScale = 1.1f;
+	static constexpr float HeroMeshYaw = -90.f;
+
+	static USceneComponent* MakePivot(AActor* Owner, USceneComponent* Parent, const FVector& Location);
+
+	/** Tuning.csv 의 Hero.* 를 이동·카메라에 적용 */
+	void ApplyTuning();
 	void BuildInput();
 	void BuildBody();
 	void UpdateMovement(float DeltaTime);

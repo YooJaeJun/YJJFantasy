@@ -1,6 +1,7 @@
 #include "Core/YJJAutoPilot.h"
 
 #include "Core/YJJAdventureSubsystem.h"
+#include "Data/YJJData.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -20,49 +21,41 @@
 #include "World/YJJWorldBuilder.h"
 #include "YJJFantasy.h"
 
-namespace
+FAutoConsoleCommandWithWorld UYJJAutoPilot::TourCommand(TEXT("yjj.Tour"), TEXT("명소 스크린샷 투어"), FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
 {
-	FVector W(float X, float Y, float Z)
+	if (UYJJAutoPilot* Pilot = World ? World->GetSubsystem<UYJJAutoPilot>() : nullptr)
 	{
-		return AYJJWorldBuilder::W(X, Y, Z);
+		Pilot->StartTour();
 	}
+}));
 
-	FAutoConsoleCommandWithWorld TourCommand(TEXT("yjj.Tour"), TEXT("명소 스크린샷 투어"), FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
+FAutoConsoleCommandWithWorld UYJJAutoPilot::PlayCommand(TEXT("yjj.AutoPlay"), TEXT("자동 플레이 검증"), FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
+{
+	if (UYJJAutoPilot* Pilot = World ? World->GetSubsystem<UYJJAutoPilot>() : nullptr)
 	{
-		if (UYJJAutoPilot* Pilot = World ? World->GetSubsystem<UYJJAutoPilot>() : nullptr)
-		{
-			Pilot->StartTour();
-		}
-	}));
+		Pilot->StartAutoPlay();
+	}
+}));
 
-	FAutoConsoleCommandWithWorld PlayCommand(TEXT("yjj.AutoPlay"), TEXT("자동 플레이 검증"), FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
+FAutoConsoleCommandWithWorldAndArgs UYJJAutoPilot::ToonCommand(TEXT("yjj.Toon"), TEXT("셀 셰이딩 조절: Ref Strength Outline"), FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+{
+	if (Args.Num() < 3 || !World)
 	{
-		if (UYJJAutoPilot* Pilot = World ? World->GetSubsystem<UYJJAutoPilot>() : nullptr)
-		{
-			Pilot->StartAutoPlay();
-		}
-	}));
+		return;
+	}
+	for (TActorIterator<AYJJEnvironment> It(World); It; ++It)
+	{
+		It->SetToonParams(FCString::Atof(*Args[0]), FCString::Atof(*Args[1]), FCString::Atof(*Args[2]));
+	}
+}));
 
-	FAutoConsoleCommandWithWorldAndArgs ToonCommand(TEXT("yjj.Toon"), TEXT("셀 셰이딩 조절: Ref Strength Outline"), FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+FAutoConsoleCommandWithWorld UYJJAutoPilot::LightAllCommand(TEXT("yjj.LightAll"), TEXT("모든 등불 켜기"), FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
+{
+	for (TActorIterator<AYJJLantern> It(World); It; ++It)
 	{
-		if (Args.Num() < 3 || !World)
-		{
-			return;
-		}
-		for (TActorIterator<AYJJEnvironment> It(World); It; ++It)
-		{
-			It->SetToonParams(FCString::Atof(*Args[0]), FCString::Atof(*Args[1]), FCString::Atof(*Args[2]));
-		}
-	}));
-
-	FAutoConsoleCommandWithWorld LightAllCommand(TEXT("yjj.LightAll"), TEXT("모든 등불 켜기"), FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
-	{
-		for (TActorIterator<AYJJLantern> It(World); It; ++It)
-		{
-			It->Interact();
-		}
-	}));
-}
+		It->Interact();
+	}
+}));
 
 TStatId UYJJAutoPilot::GetStatId() const
 {
@@ -125,27 +118,16 @@ void UYJJAutoPilot::StartTour()
 	StepIndex = -1;
 	StepTimer = 0.f;
 
-	struct FShot { const TCHAR* Name; FVector P; float Yaw; float Pitch; };
-	const FShot Shots[] = {
-		{ TEXT("Tour_0_Spawn"), AYJJWorldBuilder::GetSpawnLocation(), 45.f, -10.f },
-		{ TEXT("Tour_1_Shrine"), W(-700, -1500, 140), 65.f, 8.f },
-		{ TEXT("Tour_2_Stones"), W(2400, -300, 140), 15.f, -12.f },
-		{ TEXT("Tour_3_Meadow"), W(5400, 300, 500), 30.f, -8.f },
-		{ TEXT("Tour_4_Crystal"), W(-1800, 6300, 1520), 115.f, -6.f },
-		{ TEXT("Tour_5_Waterfall"), W(-6100, -2100, 2930), 175.f, -2.f },
-		{ TEXT("Tour_6_Forest"), W(4000, -9600, -780), 135.f, 22.f },
-		{ TEXT("Tour_7_Ruins"), W(8300, -6200, 4420), 35.f, 14.f },
-		{ TEXT("Tour_8_SkyView"), W(-2350, -500, 3900), 0.f, -22.f },
-		{ TEXT("Tour_9_Vista"), W(1500, -2200, 140), 160.f, 4.f },
-		{ TEXT("Tour_10_AIShrine"), W(2600, 5400, 2600), 55.f, -3.f },
-	};
 	Add(3.f, [] {});
-	for (const FShot& S : Shots)
+	for (const TPair<FName, const FYJJTourRow*>& Spot : FYJJData::Tour())
 	{
-		const FShot Copy = S;
-		Add(0.1f, [this, Copy] { View(Copy.P, Copy.Yaw, Copy.Pitch); });
+		const FString Name = Spot.Key.ToString();
+		const FVector P = AYJJWorldBuilder::W(Spot.Value->X, Spot.Value->Y, Spot.Value->Z);
+		const float Yaw = Spot.Value->Yaw;
+		const float Pitch = Spot.Value->Pitch;
+		Add(0.1f, [this, P, Yaw, Pitch] { View(P, Yaw, Pitch); });
 		// 텔레포트 후 Lumen·그림자가 자리 잡을 때까지 기다린다
-		Add(2.5f, [this, Copy] {
+		Add(2.5f, [this] {
 			if (AYJJHero* H = Hero())
 			{
 				// 공중 샷은 떨어지지 않게 활공
@@ -155,7 +137,7 @@ void UYJJAutoPilot::StartTour()
 				}
 			}
 		});
-		Add(0.6f, [this, Copy] { Shot(Copy.Name); });
+		Add(0.6f, [this, Name] { Shot(Name); });
 	}
 	UE_LOG(LogYJJFantasy, Display, TEXT("[AutoPilot] tour start (%d steps)"), Steps.Num());
 }
@@ -182,7 +164,7 @@ void UYJJAutoPilot::StartAutoPlay()
 
 	// 점프 높이: 고목 나선 발판(한 단 165)을 오를 수 있어야 한다
 	Add(0.3f, [this] {
-		View(W(-1600, -1200, 120), 45.f, -10.f);
+		View(AYJJWorldBuilder::W(-1600, -1200, 120), 45.f, -10.f);
 	});
 	Add(0.6f, [this] {
 		if (AYJJHero* H = Hero())
@@ -200,7 +182,7 @@ void UYJJAutoPilot::StartAutoPlay()
 
 	// 활공 + 상승 기류: 중앙섬 서쪽 기류 위에서 활공하면 높이 올라가야 한다
 	Add(0.2f, [this] {
-		View(W(-2350, -500, 400), 180.f, -10.f);
+		View(AYJJWorldBuilder::W(-2350, -500, 400), 180.f, -10.f);
 		if (AYJJHero* H = Hero())
 		{
 			TrackStartZ = H->GetActorLocation().Z;
@@ -220,7 +202,7 @@ void UYJJAutoPilot::StartAutoPlay()
 
 	// 활공 거리: 기류 꼭대기에서 폭포 정원까지 날아갈 수 있는지
 	Add(0.1f, [this] {
-		View(W(-2350, -500, 3600), 190.f, -10.f);
+		View(AYJJWorldBuilder::W(-2350, -500, 3600), 190.f, -10.f);
 		if (AYJJHero* H = Hero())
 		{
 			H->GetCharacterMovement()->SetMovementMode(MOVE_Falling);
@@ -233,7 +215,7 @@ void UYJJAutoPilot::StartAutoPlay()
 			if (AYJJHero* H = Hero())
 			{
 				// 폭포 정원 쪽으로 방향 유지
-				const FVector To = (W(-7700, -1900, 2800) - H->GetActorLocation()).GetSafeNormal2D();
+				const FVector To = (AYJJWorldBuilder::W(-7700, -1900, 2800) - H->GetActorLocation()).GetSafeNormal2D();
 				H->SetActorRotation(To.Rotation());
 				H->AddMovementInput(To, 1.f);
 			}
@@ -242,7 +224,7 @@ void UYJJAutoPilot::StartAutoPlay()
 	Add(2.f, [this] {
 		if (AYJJHero* H = Hero())
 		{
-			const float Dist = FVector::Dist2D(H->GetActorLocation(), W(-7700, -1900, 0));
+			const float Dist = FVector::Dist2D(H->GetActorLocation(), AYJJWorldBuilder::W(-7700, -1900, 0));
 			Check(H->GetActorLocation().Z > AYJJWorldBuilder::BaseZ + 2500.f && Dist < 3000.f, FString::Printf(TEXT("glide reaches waterfall garden (dist %.0f z=%.0f)"), Dist, H->GetActorLocation().Z - AYJJWorldBuilder::BaseZ));
 		}
 		Shot(TEXT("Play_2_GlideLanding"));
@@ -250,7 +232,7 @@ void UYJJAutoPilot::StartAutoPlay()
 
 	// 버섯: 밟으면 높이 튀어야 한다
 	Add(0.1f, [this] {
-		View(W(-700, 2250, 700), 90.f, -20.f);
+		View(AYJJWorldBuilder::W(-700, 2250, 700), 90.f, -20.f);
 		if (AYJJHero* H = Hero())
 		{
 			TrackStartZ = H->GetActorLocation().Z;
@@ -366,7 +348,7 @@ void UYJJAutoPilot::StartAutoPlay()
 	});
 
 	// 엔딩: 성소에서 상호작용
-	Add(0.2f, [this] { View(W(0, -420, 260), 90.f, 10.f); });
+	Add(0.2f, [this] { View(AYJJWorldBuilder::W(0, -420, 260), 90.f, 10.f); });
 	Add(1.5f, [this] {
 		if (AYJJHero* H = Hero())
 		{
@@ -383,7 +365,7 @@ void UYJJAutoPilot::StartAutoPlay()
 	});
 
 	// 낙사 -> 부활
-	Add(2.5f, [this] { View(W(0, 0, -4800), 0.f, 0.f); });
+	Add(2.5f, [this] { View(AYJJWorldBuilder::W(0, 0, -4800), 0.f, 0.f); });
 	Add(3.5f, [this] {
 		if (AYJJHero* H = Hero())
 		{

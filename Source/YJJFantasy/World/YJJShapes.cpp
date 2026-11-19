@@ -8,40 +8,38 @@
 #include "Materials/MaterialInterface.h"
 #include "YJJAssetPaths.h"
 
-namespace
+TMap<FString, TWeakObjectPtr<UObject>> YJJShapes::AssetCache;
+TArray<YJJShapes::FCollider>* YJJShapes::ColliderSink = nullptr;
+
+UMaterialInstanceDynamic* YJJShapes::MakeMID(UObject* Outer, const TCHAR* Path)
 {
-	TArray<YJJShapes::FCollider>* ColliderSink = nullptr;
-
-	template <typename T>
-	T* LoadCached(const TCHAR* Path)
+	UMaterialInterface* Parent = LoadCached<UMaterialInterface>(Path);
+	if (!Parent)
 	{
-		// 엔진/게임 에셋은 GC 루트에 올려 두고 계속 쓴다
-		static TMap<FString, TWeakObjectPtr<UObject>> Cache;
-		if (TWeakObjectPtr<UObject>* Found = Cache.Find(Path))
-		{
-			if (Found->IsValid())
-			{
-				return Cast<T>(Found->Get());
-			}
-		}
-		T* Loaded = LoadObject<T>(nullptr, Path);
-		if (Loaded)
-		{
-			Loaded->AddToRoot();
-			Cache.Add(Path, Loaded);
-		}
-		return Loaded;
+		Parent = LoadCached<UMaterialInterface>(YJJAssetPaths::FallbackMaterial);
 	}
+	return Parent ? UMaterialInstanceDynamic::Create(Parent, Outer) : nullptr;
+}
 
-	UMaterialInstanceDynamic* MakeMID(UObject* Outer, const TCHAR* Path)
+EYJJShape YJJShapes::ShapeFromName(const FString& Name)
+{
+	if (Name == TEXT("Sphere"))
 	{
-		UMaterialInterface* Parent = LoadCached<UMaterialInterface>(Path);
-		if (!Parent)
-		{
-			Parent = LoadCached<UMaterialInterface>(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
-		}
-		return Parent ? UMaterialInstanceDynamic::Create(Parent, Outer) : nullptr;
+		return EYJJShape::Sphere;
 	}
+	if (Name == TEXT("Cylinder"))
+	{
+		return EYJJShape::Cylinder;
+	}
+	if (Name == TEXT("Cone"))
+	{
+		return EYJJShape::Cone;
+	}
+	if (Name == TEXT("Plane"))
+	{
+		return EYJJShape::Plane;
+	}
+	return EYJJShape::Cube;
 }
 
 UStaticMesh* YJJShapes::Mesh(EYJJShape Shape)

@@ -44,6 +44,9 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	/** 등 갓(빛 구슬)의 높이 */
+	static constexpr float OrbHeight = 330.f;
+
 	FString LanternName;
 	FLinearColor Color = FLinearColor(1.f, 0.8f, 0.4f);
 	bool bLit = false;

@@ -10,7 +10,10 @@ namespace YJJAssetPaths
 	inline const TCHAR* WaterMaterial = TEXT("/Game/YJJFantasy/Materials/M_YJJ_Water.M_YJJ_Water");
 	inline const TCHAR* ToonPostProcess = TEXT("/Game/YJJFantasy/Materials/PP_YJJ_Toon.PP_YJJ_Toon");
 
-	inline const TCHAR* Cube = TEXT("/Engine/BasicShapes/Cube.Cube");
+	/** 게임 머티리얼이 아직 없을 때 쓰는 엔진 기본 머티리얼 */
+	inline const TCHAR* FallbackMaterial = TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial");
+
+	inline const TCHAR* Cube =TEXT("/Engine/BasicShapes/Cube.Cube");
 	inline const TCHAR* Sphere = TEXT("/Engine/BasicShapes/Sphere.Sphere");
 	inline const TCHAR* Cylinder = TEXT("/Engine/BasicShapes/Cylinder.Cylinder");
 	inline const TCHAR* Cone = TEXT("/Engine/BasicShapes/Cone.Cone");
@@ -27,6 +30,9 @@ namespace YJJAssetPaths
 
 	/** TRELLIS.2로 만든 떠 있는 성소 섬 (없으면 배치하지 않는다) */
 	inline const TCHAR* AIFloatingShrine = TEXT("/Game/YJJFantasy/AI/SM_FloatingShrine/SM_FloatingShrine/StaticMeshes/SM_FloatingShrine.SM_FloatingShrine");
+
+	/** 주아체에 없는 글자를 채우는 엔진 글꼴 */
+	inline const TCHAR* FallbackFont = TEXT("/Engine/EngineFonts/Roboto.Roboto");
 
 	/** HUD 글꼴 (Content 기준). 배민 주아체, SIL OFL 1.1 */
 	inline const TCHAR* GameFontFile = TEXT("YJJFantasy/Fonts/Jua-Regular.ttf");

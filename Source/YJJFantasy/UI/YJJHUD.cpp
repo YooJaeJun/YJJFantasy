@@ -1,5 +1,7 @@
 #include "UI/YJJHUD.h"
 
+#include "Data/YJJLoc.h"
+#include "Data/YJJData.h"
 #include "CanvasItem.h"
 #include "Core/YJJAdventureSubsystem.h"
 #include "Engine/Canvas.h"
@@ -14,27 +16,25 @@
 #include "Player/YJJHero.h"
 #include "YJJAssetPaths.h"
 
-namespace
+UFont* AYJJHUD::FallbackFont = nullptr;
+
+const UFont* AYJJHUD::BaseFont()
 {
-	namespace HudColor
+	if (!FallbackFont)
 	{
-		const FLinearColor Ink(0.05f, 0.07f, 0.12f, 1.f);
-		const FLinearColor Cream(1.f, 0.97f, 0.9f, 1.f);
-		const FLinearColor GoldText(1.f, 0.84f, 0.45f, 1.f);
-		const FLinearColor Sky(0.6f, 0.9f, 1.f, 1.f);
+		FallbackFont = LoadObject<UFont>(nullptr, YJJAssetPaths::FallbackFont);
+		if (FallbackFont)
+		{
+			FallbackFont->AddToRoot();
+		}
 	}
+	return FallbackFont;
+}
 
-	const UFont* BaseFont()
-	{
-		static const UFont* Font = LoadObject<UFont>(nullptr, TEXT("/Engine/EngineFonts/Roboto.Roboto"));
-		return Font;
-	}
-
-	FLinearColor WithAlpha(FLinearColor C, float A)
-	{
-		C.A *= A;
-		return C;
-	}
+FLinearColor AYJJHUD::WithAlpha(FLinearColor C, float A)
+{
+	C.A *= A;
+	return C;
 }
 
 TSharedPtr<const FCompositeFont> AYJJHUD::GetGameFont()
@@ -220,9 +220,9 @@ void AYJJHUD::DrawObjective(const AYJJHero& Hero, const UYJJAdventureSubsystem& 
 	const float Y = S(36.f);
 	const FVector2D Size = Measure(Goal, 26.f);
 	Panel(X, Y, Size.X + S(74.f), S(52.f), FLinearColor(0.03f, 0.06f, 0.12f, 0.45f));
-	Diamond(X + S(28.f), Y + S(26.f), S(11.f), HudColor::GoldText);
+	Diamond(X + S(28.f), Y + S(26.f), S(11.f), FYJJData::Color(TEXT("HudGoldText")));
 	Diamond(X + S(28.f), Y + S(26.f), S(5.f), FLinearColor(1.f, 1.f, 1.f, 0.9f));
-	Text(Goal, X + S(50.f), Y + S(26.f), 26.f, HudColor::Cream);
+	Text(Goal, X + S(50.f), Y + S(26.f), 26.f, FYJJData::Color(TEXT("HudCream")));
 
 	// 등불 진행 점
 	const int32 Count = Adv.GetLanternCount();
@@ -232,7 +232,7 @@ void AYJJHUD::DrawObjective(const AYJJHero& Hero, const UYJJAdventureSubsystem& 
 		const float CX = X + S(28.f + i * 26.f);
 		const float CY = Y + S(76.f);
 		Circle(CX, CY, S(9.f), FLinearColor(0.f, 0.f, 0.f, 0.35f));
-		Circle(CX, CY, S(6.5f), i < Lit ? HudColor::GoldText : FLinearColor(1.f, 1.f, 1.f, 0.25f));
+		Circle(CX, CY, S(6.5f), i < Lit ? FYJJData::Color(TEXT("HudGoldText")) : FLinearColor(1.f, 1.f, 1.f, 0.25f));
 	}
 
 	// 별가루
@@ -342,9 +342,9 @@ void AYJJHUD::DrawMarker(const AYJJHero& Hero, const UYJJAdventureSubsystem& Adv
 	if (bInFront && bProjected && Screen.X > Margin && Screen.X < Canvas->ClipX - Margin && Screen.Y > Margin && Screen.Y < Canvas->ClipY - Margin)
 	{
 		Diamond(Screen.X, Screen.Y + Bob, S(16.f), FLinearColor(0.f, 0.f, 0.f, 0.35f));
-		Diamond(Screen.X, Screen.Y + Bob, S(12.f), HudColor::GoldText);
+		Diamond(Screen.X, Screen.Y + Bob, S(12.f), FYJJData::Color(TEXT("HudGoldText")));
 		Diamond(Screen.X, Screen.Y + Bob, S(5.f), FLinearColor::White);
-		Text(FString::Printf(TEXT("%.0fm"), Dist), Screen.X, Screen.Y + Bob + S(28.f), 18.f, HudColor::Cream, EAlign::Center);
+		Text(FString::Printf(TEXT("%.0fm"), Dist), Screen.X, Screen.Y + Bob + S(28.f), 18.f, FYJJData::Color(TEXT("HudCream")), EAlign::Center);
 		return;
 	}
 
@@ -365,11 +365,11 @@ void AYJJHUD::DrawMarker(const AYJJHero& Hero, const UYJJAdventureSubsystem& Adv
 	T.V0_Pos = P + Dir * S(20.f);
 	T.V1_Pos = P - Dir * S(8.f) + Perp * S(14.f);
 	T.V2_Pos = P - Dir * S(8.f) - Perp * S(14.f);
-	T.V0_Color = T.V1_Color = T.V2_Color = HudColor::GoldText;
+	T.V0_Color = T.V1_Color = T.V2_Color = FYJJData::Color(TEXT("HudGoldText"));
 	FCanvasTriangleItem Item(Tris, GWhiteTexture);
 	Item.BlendMode = SE_BLEND_Translucent;
 	Canvas->DrawItem(Item);
-	Text(FString::Printf(TEXT("%.0fm"), Dist), P.X - Dir.X * S(34.f), P.Y - Dir.Y * S(34.f), 17.f, HudColor::Cream, EAlign::Center);
+	Text(FString::Printf(TEXT("%.0fm"), Dist), P.X - Dir.X * S(34.f), P.Y - Dir.Y * S(34.f), 17.f, FYJJData::Color(TEXT("HudCream")), EAlign::Center);
 }
 
 void AYJJHUD::DrawPrompt(const AYJJHero& Hero)
@@ -384,8 +384,8 @@ void AYJJHUD::DrawPrompt(const AYJJHero& Hero)
 	const FVector2D Size = Measure(Prompt, 24.f);
 	Panel(X, Y - S(24.f), Size.X + S(80.f), S(48.f), FLinearColor(0.03f, 0.06f, 0.12f, 0.6f));
 	Panel(X + S(8.f), Y - S(17.f), S(34.f), S(34.f), FLinearColor(1.f, 0.95f, 0.85f, 0.95f));
-	Text(TEXT("E"), X + S(25.f), Y, 22.f, HudColor::Ink, EAlign::Center, 0.f);
-	Text(Prompt, X + S(56.f), Y, 24.f, HudColor::Cream);
+	Text(TEXT("E"), X + S(25.f), Y, 22.f, FYJJData::Color(TEXT("HudInk")), EAlign::Center, 0.f);
+	Text(Prompt, X + S(56.f), Y, 24.f, FYJJData::Color(TEXT("HudCream")));
 }
 
 void AYJJHUD::DrawZoneCard(const UYJJAdventureSubsystem& Adv)
@@ -403,14 +403,14 @@ void AYJJHUD::DrawZoneCard(const UYJJAdventureSubsystem& Adv)
 	const float CY = Canvas->ClipY * 0.24f;
 
 	const float LineW = S(260.f) * Ease;
-	FCanvasTileItem Line(FVector2D(CX - LineW, CY + S(42.f)), FVector2D(LineW * 2.f, S(2.f)), WithAlpha(HudColor::GoldText, A * 0.8f));
+	FCanvasTileItem Line(FVector2D(CX - LineW, CY + S(42.f)), FVector2D(LineW * 2.f, S(2.f)), WithAlpha(FYJJData::Color(TEXT("HudGoldText")), A * 0.8f));
 	Line.BlendMode = SE_BLEND_Translucent;
 	Canvas->DrawItem(Line);
-	Diamond(CX - LineW, CY + S(43.f), S(6.f), WithAlpha(HudColor::GoldText, A));
-	Diamond(CX + LineW, CY + S(43.f), S(6.f), WithAlpha(HudColor::GoldText, A));
+	Diamond(CX - LineW, CY + S(43.f), S(6.f), WithAlpha(FYJJData::Color(TEXT("HudGoldText")), A));
+	Diamond(CX + LineW, CY + S(43.f), S(6.f), WithAlpha(FYJJData::Color(TEXT("HudGoldText")), A));
 	Diamond(CX, CY + S(43.f), S(8.f), WithAlpha(FLinearColor::White, A));
 
-	Text(Zone->Name, CX, CY - S(4.f), 64.f, WithAlpha(HudColor::Cream, A), EAlign::Center, 3.f, FLinearColor(0.1f, 0.16f, 0.3f, 0.9f));
+	Text(Zone->Name, CX, CY - S(4.f), 64.f, WithAlpha(FYJJData::Color(TEXT("HudCream")), A), EAlign::Center, 3.f, FLinearColor(0.1f, 0.16f, 0.3f, 0.9f));
 	Text(Zone->Subtitle, CX, CY + S(78.f), 24.f, WithAlpha(FLinearColor(0.85f, 0.93f, 1.f, 1.f), A), EAlign::Center, 2.f);
 }
 
@@ -443,16 +443,16 @@ void AYJJHUD::DrawIntro(const UYJJAdventureSubsystem& Adv)
 	const float CY = Canvas->ClipY * 0.36f;
 	if (TitleA > 0.f)
 	{
-		Text(TEXT("하늘섬의 등불"), CX, CY, 92.f, WithAlpha(HudColor::Cream, TitleA), EAlign::Center, 4.f, FLinearColor(0.12f, 0.2f, 0.38f, 0.9f));
-		Text(TEXT("빛을 잃은 바람의 성소. 다섯 섬의 등불을 다시 밝히자"), CX, CY + S(84.f), 28.f, WithAlpha(FLinearColor(0.88f, 0.95f, 1.f, 1.f), TitleA), EAlign::Center, 2.f);
+		Text(FYJJLoc::Get(TEXT("Title.Name")), CX, CY, 92.f, WithAlpha(FYJJData::Color(TEXT("HudCream")), TitleA), EAlign::Center, 4.f, FLinearColor(0.12f, 0.2f, 0.38f, 0.9f));
+		Text(FYJJLoc::Get(TEXT("Title.Sub")), CX, CY + S(84.f), 28.f, WithAlpha(FLinearColor(0.88f, 0.95f, 1.f, 1.f), TitleA), EAlign::Center, 2.f);
 	}
 	const float HintA = FMath::Clamp((T - 2.f) / 1.f, 0.f, 1.f) * FMath::Clamp((14.f - T) / 1.5f, 0.f, 1.f);
 	if (HintA > 0.f)
 	{
-		const FString Hint = TEXT("WASD 이동   Shift 달리기   Space 점프 · 공중에서 활공   좌클릭 공격   E 상호작용");
+		const FString Hint = FYJJLoc::Get(TEXT("Title.Controls"));
 		const FVector2D Size = Measure(Hint, 21.f);
 		Panel(CX - Size.X * 0.5f - S(24.f), Canvas->ClipY - S(70.f), Size.X + S(48.f), S(40.f), FLinearColor(0.03f, 0.06f, 0.12f, 0.45f * HintA));
-		Text(Hint, CX, Canvas->ClipY - S(50.f), 21.f, WithAlpha(HudColor::Cream, HintA), EAlign::Center, 1.5f);
+		Text(Hint, CX, Canvas->ClipY - S(50.f), 21.f, WithAlpha(FYJJData::Color(TEXT("HudCream")), HintA), EAlign::Center, 1.5f);
 	}
 }
 
@@ -478,12 +478,12 @@ void AYJJHUD::DrawEnding(const UYJJAdventureSubsystem& Adv)
 		return;
 	}
 	const float CY = Canvas->ClipY * 0.4f;
-	Text(TEXT("하늘섬에 다시 바람이 분다"), CX, CY, 72.f, WithAlpha(HudColor::Cream, A), EAlign::Center, 4.f, FLinearColor(0.35f, 0.2f, 0.12f, 0.9f));
+	Text(FYJJLoc::Get(TEXT("Ending.Title")), CX, CY, 72.f, WithAlpha(FYJJData::Color(TEXT("HudCream")), A), EAlign::Center, 4.f, FLinearColor(0.35f, 0.2f, 0.12f, 0.9f));
 	const int32 Minutes = FMath::FloorToInt(Adv.GetPlayTime() / 60.f);
 	const int32 Seconds = FMath::FloorToInt(Adv.GetPlayTime()) % 60;
-	const FString Stats = FString::Printf(TEXT("모험 시간 %d분 %02d초      별가루 %d / %d      보물 상자 %d / %d"), Minutes, Seconds, Adv.GetStardust(), Adv.GetStardustTotal(), Adv.GetChestsOpened(), Adv.GetChestTotal());
-	Text(Stats, CX, CY + S(84.f), 28.f, WithAlpha(HudColor::GoldText, A), EAlign::Center, 2.f);
-	Text(TEXT("플레이해 주셔서 고마워요"), CX, CY + S(134.f), 24.f, WithAlpha(FLinearColor(0.95f, 0.95f, 1.f, 1.f), A), EAlign::Center, 2.f);
+	const FString Stats = FYJJLoc::Format(TEXT("Ending.Stats"), { Minutes, FString::Printf(TEXT("%02d"), Seconds), Adv.GetStardust(), Adv.GetStardustTotal(), Adv.GetChestsOpened(), Adv.GetChestTotal() });
+	Text(Stats, CX, CY + S(84.f), 28.f, WithAlpha(FYJJData::Color(TEXT("HudGoldText")), A), EAlign::Center, 2.f);
+	Text(FYJJLoc::Get(TEXT("Ending.Thanks")), CX, CY + S(134.f), 24.f, WithAlpha(FLinearColor(0.95f, 0.95f, 1.f, 1.f), A), EAlign::Center, 2.f);
 }
 
 void AYJJHUD::DrawOverlays(const AYJJHero& Hero)

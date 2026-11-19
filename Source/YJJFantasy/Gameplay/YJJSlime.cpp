@@ -1,5 +1,6 @@
 #include "Gameplay/YJJSlime.h"
 
+#include "Data/YJJData.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/YJJAudio.h"
 #include "Engine/World.h"
@@ -8,14 +9,6 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Player/YJJHero.h"
 #include "World/YJJShapes.h"
-
-namespace
-{
-	constexpr float SightRange = 1300.f;
-	constexpr float ChaseSpeed = 330.f;
-	constexpr float WanderSpeed = 140.f;
-	constexpr float HopPeriod = 0.55f;
-}
 
 AYJJSlime::AYJJSlime()
 {
@@ -41,7 +34,7 @@ void AYJJSlime::BeginPlay()
 	{
 		GroundZ = Home.Z;
 	}
-	HopTime = YJJShapes::Hash(GetUniqueID()) * HopPeriod;
+	HopTime = YJJShapes::Hash(GetUniqueID()) * FYJJData::Tune(TEXT("Mob.HopPeriod"));
 
 	BodyPivot = NewObject<USceneComponent>(this);
 	BodyPivot->SetMobility(EComponentMobility::Movable);
@@ -207,7 +200,7 @@ void AYJJSlime::Tick(float DeltaTime)
 	if (Hero && !Hero->IsDead())
 	{
 		const FVector HP = Hero->GetActorLocation();
-		if (FVector::Dist2D(HP, P) < SightRange && FMath::Abs(HP.Z - P.Z) < 500.f && FVector::Dist2D(HP, Home) < HomeRadius + 400.f)
+		if (FVector::Dist2D(HP, P) < FYJJData::Tune(TEXT("Mob.SightRange")) && FMath::Abs(HP.Z - P.Z) < 500.f && FVector::Dist2D(HP, Home) < HomeRadius + 400.f)
 		{
 			bChasing = true;
 			Target = HP;
@@ -227,7 +220,7 @@ void AYJJSlime::Tick(float DeltaTime)
 
 	// 통통 뛰는 동안에만 움직인다
 	HopTime += DeltaTime * (bChasing ? 1.4f : 1.f);
-	const float Hop = FMath::Fmod(HopTime, HopPeriod) / HopPeriod;
+	const float Hop = FMath::Fmod(HopTime, FYJJData::Tune(TEXT("Mob.HopPeriod"))) / FYJJData::Tune(TEXT("Mob.HopPeriod"));
 	const bool bAirborne = Hop < 0.6f;
 	const float Air = bAirborne ? FMath::Sin(Hop / 0.6f * PI) : 0.f;
 
@@ -236,7 +229,7 @@ void AYJJSlime::Tick(float DeltaTime)
 	ToTarget.Z = 0.f;
 	if (bAirborne && ToTarget.SizeSquared() > 100.f)
 	{
-		Move = ToTarget.GetSafeNormal() * (bChasing ? ChaseSpeed : WanderSpeed) * DeltaTime;
+		Move = ToTarget.GetSafeNormal() * (bChasing ? FYJJData::Tune(TEXT("Mob.ChaseSpeed")) : FYJJData::Tune(TEXT("Mob.WanderSpeed"))) * DeltaTime;
 	}
 	Move += KnockVelocity * DeltaTime;
 	KnockVelocity = FMath::VInterpTo(KnockVelocity, FVector::ZeroVector, DeltaTime, 5.f);

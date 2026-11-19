@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Data/YJJData.h"
 #include "World/YJJShapes.h"
 #include "YJJWorldBuilder.generated.h"
 
@@ -94,16 +95,36 @@ private:
 	bool GroundAt(const FVector& XY, float& OutZ, float From = 6000.f) const;
 	FVector OnGround(const FVector& XY, float Lift = 0.f) const;
 
-	// ---- 섬별 구성
-	void BuildHub();
-	void BuildMeadow();
-	void BuildCrystal();
-	void BuildWaterfall();
-	void BuildForest();
-	void BuildRuins();
+	// ---- 데이터로 짓기 (Content/YJJFantasy/Data/Islands.csv, Placements.csv, VistaIslands.csv)
+	void BuildIslands();
+	void DecorateIslands();
+	/** bEarly 면 언덕·지형(풀보다 먼저), 아니면 나머지 */
+	void PlaceAll(bool bEarly);
+	void Place(const FYJJPlacementRow& Row);
+	FVector PlacementOrigin(const FYJJPlacementRow& Row) const;
+	void AddShape(const FYJJPlacementRow& Row, const FVector& Origin);
+	void AddRing(const FYJJPlacementRow& Row, const FVector& Center);
+	void AddAIShrineIsland(const FVector& Location, float Width, float Yaw);
 	void BuildVista();
+	static bool IsEarlyPlacement(const FYJJPlacementRow& Row);
 
 	void AddZone(const FString& Name, const FString& Subtitle, const FVector& Center, float Radius);
+
+	template <typename T>
+	static T* SpawnDeferred(UWorld* World, const FVector& Location, const FRotator& Rotation = FRotator::ZeroRotator)
+	{
+		return World->SpawnActorDeferred<T>(T::StaticClass(), FTransform(Rotation, Location), nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	}
+
+	template <typename T>
+	static void Finish(T* Actor)
+	{
+		Actor->FinishSpawning(Actor->GetTransform());
+	}
+
+	/** 섬 키 -> 섬 바닥 액터 (언덕·지형 조각을 붙인다) */
+	UPROPERTY()
+	TMap<FName, TObjectPtr<AYJJProp>> IslandProps;
 
 	/** 짓는 동안 만든 충돌 도형 (땅 찾기용) */
 	TArray<YJJShapes::FCollider> Colliders;
