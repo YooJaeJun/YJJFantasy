@@ -24,16 +24,16 @@ void AYJJStardust::BeginPlay()
 {
 	Super::BeginPlay();
 	Home = GetActorLocation();
-	Phase = YJJShapes::Hash(GetUniqueID()) * 10.f;
+	Phase = YJJShapes::Hash(GetUniqueID()) * PhaseSpread;
 
-	const FLinearColor Gold(1.f, 0.82f, 0.4f);
-	Core = YJJShapes::Add(this, RootComponent, EYJJShape::Sphere, FVector::ZeroVector, FVector(26, 26, 26), YJJShapes::Glow(this, FLinearColor(1.f, 0.95f, 0.8f), 5.f, 1.f, 0.5f), false);
-	HaloMID = YJJShapes::Glow(this, Gold, 1.2f, 0.f, 1.f);
-	Halo = YJJShapes::Add(this, RootComponent, EYJJShape::Sphere, FVector::ZeroVector, FVector(70, 70, 70), HaloMID, false);
+	const FLinearColor Gold = FYJJData::Color(TEXT("StardustGold"));
+	Core = YJJShapes::Add(this, RootComponent, EYJJShape::Sphere, FVector::ZeroVector, FVector(CoreSize), YJJShapes::Glow(this, FYJJData::Color(TEXT("StardustCore")), CoreGlow, 1.f, CoreRim), false);
+	HaloMID = YJJShapes::Glow(this, Gold, HaloGlow, 0.f, 1.f);
+	Halo = YJJShapes::Add(this, RootComponent, EYJJShape::Sphere, FVector::ZeroVector, FVector(HaloSize), HaloMID, false);
 	// 반짝이는 십자 별
-	UMaterialInterface* StarMat = YJJShapes::Glow(this, Gold, 3.f, 1.f, 0.f);
-	Star = YJJShapes::Add(this, RootComponent, EYJJShape::Cube, FVector::ZeroVector, FVector(6, 6, 90), StarMat, false);
-	StarB = YJJShapes::Add(this, RootComponent, EYJJShape::Cube, FVector::ZeroVector, FVector(90, 6, 6), StarMat, false);
+	UMaterialInterface* StarMat = YJJShapes::Glow(this, Gold, StarGlow, 1.f, 0.f);
+	Star = YJJShapes::Add(this, RootComponent, EYJJShape::Cube, FVector::ZeroVector, FVector(StarThickness, StarThickness, StarLength), StarMat, false);
+	StarB = YJJShapes::Add(this, RootComponent, EYJJShape::Cube, FVector::ZeroVector, FVector(StarLength, StarThickness, StarThickness), StarMat, false);
 
 	if (bCountsTowardTotal)
 	{
@@ -53,8 +53,8 @@ void AYJJStardust::Tick(float DeltaTime)
 	{
 		// 주운 뒤: 반짝 커졌다가 사라진다
 		CollectTime += DeltaTime;
-		const float A = CollectTime / 0.25f;
-		SetActorScale3D(FVector(1.f + A * 1.5f));
+		const float A = CollectTime / CollectFlashTime;
+		SetActorScale3D(FVector(1.f + A * CollectFlashGrow));
 		HaloMID->SetScalarParameterValue(TEXT("Fade"), FMath::Max(0.f, 1.f - A));
 		if (A >= 1.f)
 		{
@@ -66,17 +66,18 @@ void AYJJStardust::Tick(float DeltaTime)
 	// 몹이 떨군 별가루는 튀어 올랐다가 떨어져 자리 잡는다
 	if (!PopVelocity.IsNearlyZero())
 	{
-		PopVelocity.Z -= 2400.f * DeltaTime;
+		PopVelocity.Z -= FYJJData::Tune(TEXT("Stardust.PopGravity")) * DeltaTime;
 		Home += PopVelocity * DeltaTime;
 		if (PopVelocity.Z < 0.f)
 		{
+			const float Hover = FYJJData::Tune(TEXT("Stardust.SettleHeight"));
 			FHitResult Hit;
-			if (GetWorld()->LineTraceSingleByObjectType(Hit, Home + FVector(0, 0, 50), Home - FVector(0, 0, 80), FCollisionObjectQueryParams(ECC_WorldStatic)) && Home.Z < Hit.ImpactPoint.Z + 70.f)
+			if (GetWorld()->LineTraceSingleByObjectType(Hit, Home + FVector(0, 0, LandProbeUp), Home - FVector(0, 0, LandProbeDown), FCollisionObjectQueryParams(ECC_WorldStatic)) && Home.Z < Hit.ImpactPoint.Z + Hover)
 			{
-				Home.Z = Hit.ImpactPoint.Z + 70.f;
+				Home.Z = Hit.ImpactPoint.Z + Hover;
 				PopVelocity = FVector::ZeroVector;
 			}
-			else if (Home.Z < -100000.f)
+			else if (Home.Z < LostBelowZ)
 			{
 				Destroy();
 				return;
@@ -88,7 +89,7 @@ void AYJJStardust::Tick(float DeltaTime)
 	const APawn* Pawn = PC ? PC->GetPawn() : nullptr;
 	if (Pawn)
 	{
-		const FVector Target = Pawn->GetActorLocation() + FVector(0, 0, 20);
+		const FVector Target = Pawn->GetActorLocation() + FVector(0, 0, TargetLift);
 		const float Dist = FVector::Dist(GetActorLocation(), Target);
 		if (!bMagnet && Dist < FYJJData::Tune(TEXT("Stardust.MagnetRange")) && PopVelocity.IsNearlyZero())
 		{
@@ -98,7 +99,7 @@ void AYJJStardust::Tick(float DeltaTime)
 		{
 			// 가속하며 빨려 들어간다
 			const FVector Dir = (Target - GetActorLocation()).GetSafeNormal();
-			MagnetVelocity = FMath::VInterpTo(MagnetVelocity, Dir * 2200.f, DeltaTime, 8.f);
+			MagnetVelocity = FMath::VInterpTo(MagnetVelocity, Dir * FYJJData::Tune(TEXT("Stardust.MagnetSpeed")), DeltaTime, FYJJData::Tune(TEXT("Stardust.MagnetAccel")));
 			SetActorLocation(GetActorLocation() + MagnetVelocity * DeltaTime);
 			if (FVector::Dist(GetActorLocation(), Target) < FYJJData::Tune(TEXT("Stardust.CollectRange")))
 			{
@@ -108,15 +109,17 @@ void AYJJStardust::Tick(float DeltaTime)
 		}
 	}
 
-	const float Bob = FMath::Sin(Time * 2.4f + Phase) * 18.f;
+	const float Bob = FMath::Sin(Time * BobSpeed + Phase) * BobHeight;
 	SetActorLocation(Home + FVector(0, 0, Bob));
-	const float Twinkle = 0.7f + 0.3f * FMath::Sin(Time * 6.f + Phase * 3.f);
-	const FRotator Spin(0, Time * 90.f, 0);
+	const float Twinkle = TwinkleBase + TwinkleRange * FMath::Sin(Time * TwinkleSpeed + Phase * TwinklePhaseMul);
+	const FRotator Spin(0, Time * SpinSpeed, 0);
 	Star->SetRelativeRotation(Spin);
 	StarB->SetRelativeRotation(Spin);
-	Star->SetRelativeScale3D(FVector(0.06f, 0.06f, 0.9f * Twinkle));
-	StarB->SetRelativeScale3D(FVector(0.9f * Twinkle, 0.06f, 0.06f));
-	HaloMID->SetScalarParameterValue(TEXT("Intensity"), 0.9f + 0.4f * Twinkle);
+	const float Thin = StarThickness / YJJShapes::BaseShapeSize;
+	const float Long = StarLength / YJJShapes::BaseShapeSize * Twinkle;
+	Star->SetRelativeScale3D(FVector(Thin, Thin, Long));
+	StarB->SetRelativeScale3D(FVector(Long, Thin, Thin));
+	HaloMID->SetScalarParameterValue(TEXT("Intensity"), HaloPulseBase + HaloPulseRange * Twinkle);
 }
 
 void AYJJStardust::Collect()

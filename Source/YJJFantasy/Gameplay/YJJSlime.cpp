@@ -1,6 +1,7 @@
 #include "Gameplay/YJJSlime.h"
 
 #include "Data/YJJData.h"
+#include "YJJFantasy.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/YJJAudio.h"
 #include "Engine/World.h"
@@ -43,14 +44,14 @@ void AYJJSlime::BeginPlay()
 	AddInstanceComponent(BodyPivot);
 
 	const float S = Size;
-	BodyMID = YJJShapes::Surface(this, YJJShapes::Shade(Color, 1.15f), Color, 0.35f, 0.25f);
+	BodyMID = YJJShapes::Surface(this, YJJShapes::Shade(Color, TopShade), Color, BodyEmissive, BodyRoughness);
 	// 떡무지 (Blender: Tools/Character/make_mob.py). 몸은 섬마다 색을 입히고, 얼굴의 눈꺼풀도 몸 색으로
 	UStaticMesh* MobBody = YJJShapes::CharacterMesh(TEXT("SM_Mob_Body"));
 	UStaticMesh* MobFace = YJJShapes::CharacterMesh(TEXT("SM_Mob_Face"));
 	if (MobBody && MobFace)
 	{
-		const FRotator Front(0.f, -90.f, 0.f);
-		Body = YJJShapes::AddAI(this, BodyPivot, MobBody, FVector::ZeroVector, 150.f * S, true, Front);
+		const FRotator Front(0.f, MeshYaw, 0.f);
+		Body = YJJShapes::AddAI(this, BodyPivot, MobBody, FVector::ZeroVector, MeshWidth * S, true, Front);
 		Body->SetMaterial(0, BodyMID);
 		const float FaceScale = Body->GetRelativeScale3D().X;
 		UStaticMeshComponent* Face = NewObject<UStaticMeshComponent>(this);
@@ -72,32 +73,24 @@ void AYJJSlime::BeginPlay()
 				Face->SetMaterial(i, BodyMID);
 			}
 		}
-		Shadow = YJJShapes::Add(this, RootComponent, EYJJShape::Cylinder, FVector(0, 0, 2), FVector(120 * S, 120 * S, 2), YJJShapes::Solid(this, FLinearColor(0.05f, 0.08f, 0.06f), 0.f), false);
-		BuildPuffs();
-		return;
 	}
-	Body = YJJShapes::Add(this, BodyPivot, EYJJShape::Sphere, FVector(0, 0, 55 * S), FVector(130 * S, 130 * S, 110 * S), BodyMID, false);
-	// 반짝이는 하이라이트
-	YJJShapes::Add(this, BodyPivot, EYJJShape::Sphere, FVector(-20 * S, -28 * S, 92 * S), FVector(26 * S, 20 * S, 14 * S), YJJShapes::Solid(this, FLinearColor::White, 2.f), false);
-	// 눈 (멍한 점 두 개) + 볼터치
-	UMaterialInterface* Eye = YJJShapes::Solid(this, FLinearColor(0.05f, 0.05f, 0.08f), 0.f, 0.3f);
-	UMaterialInterface* Blush = YJJShapes::Solid(this, FLinearColor(1.f, 0.55f, 0.6f), 0.3f);
-	for (int32 Side = -1; Side <= 1; Side += 2)
+	else
 	{
-		YJJShapes::Add(this, BodyPivot, EYJJShape::Sphere, FVector(58 * S, Side * 24 * S, 66 * S), FVector(14 * S, 14 * S, 22 * S), Eye, false);
-		YJJShapes::Add(this, BodyPivot, EYJJShape::Sphere, FVector(54 * S, Side * 42 * S, 50 * S), FVector(8 * S, 18 * S, 10 * S), Blush, false);
+		// 모델이 아직 임포트되지 않았으면 둥근 덩어리로 대신한다
+		UE_LOG(LogYJJFantasy, Warning, TEXT("[Mob] 떡무지 모델 없음: BuildContent.ps1로 임포트 필요"));
+		Body = YJJShapes::Add(this, BodyPivot, EYJJShape::Sphere, FVector(0, 0, FallbackSize.Z * 0.5f * S), FallbackSize * S, BodyMID, false);
 	}
 	// 바닥 그림자 (점프할 때 위치를 알기 쉽게)
-	Shadow = YJJShapes::Add(this, RootComponent, EYJJShape::Cylinder, FVector(0, 0, 2), FVector(120 * S, 120 * S, 2), YJJShapes::Solid(this, FLinearColor(0.05f, 0.08f, 0.06f), 0.f), false);
+	Shadow = YJJShapes::Add(this, RootComponent, EYJJShape::Cylinder, FVector(0, 0, ShadowLift), FVector(ShadowSize * S, ShadowSize * S, ShadowLift), YJJShapes::Solid(this, FYJJData::Color(TEXT("MobShadow")), 0.f), false);
 	BuildPuffs();
 }
 
 void AYJJSlime::BuildPuffs()
 {
-	PuffMID = YJJShapes::Glow(this, YJJShapes::Shade(Color, 1.3f), 0.f, 0.6f, 1.f);
-	for (int32 i = 0; i < 10; ++i)
+	PuffMID = YJJShapes::Glow(this, YJJShapes::Shade(Color, PuffShade), 0.f, PuffCore, 1.f);
+	for (int32 i = 0; i < PuffCount; ++i)
 	{
-		UStaticMeshComponent* Puff = YJJShapes::Add(this, RootComponent, EYJJShape::Sphere, FVector::ZeroVector, FVector(50, 50, 50), PuffMID, false);
+		UStaticMeshComponent* Puff = YJJShapes::Add(this, RootComponent, EYJJShape::Sphere, FVector::ZeroVector, FVector(PuffSize), PuffMID, false);
 		Puff->SetVisibility(false);
 		Puffs.Add(Puff);
 	}
@@ -107,9 +100,9 @@ bool AYJJSlime::FindGround(const FVector& At, float& OutZ) const
 {
 	FHitResult Hit;
 	FCollisionQueryParams Params(TEXT("SlimeGround"), false, this);
-	if (GetWorld()->LineTraceSingleByObjectType(Hit, At + FVector(0, 0, 300), At - FVector(0, 0, 600), FCollisionObjectQueryParams(ECC_WorldStatic), Params))
+	if (GetWorld()->LineTraceSingleByObjectType(Hit, At + FVector(0, 0, GroundProbeUp), At - FVector(0, 0, GroundProbeDown), FCollisionObjectQueryParams(ECC_WorldStatic), Params))
 	{
-		if (Hit.ImpactNormal.Z > 0.7f)
+		if (Hit.ImpactNormal.Z > WalkableNormalZ)
 		{
 			OutZ = Hit.ImpactPoint.Z;
 			return true;
@@ -128,8 +121,8 @@ bool AYJJSlime::TakeHit(const FVector& From)
 	Flash = 1.f;
 	FVector Away = GetActorLocation() - From;
 	Away.Z = 0.f;
-	KnockVelocity = Away.GetSafeNormal() * 900.f;
-	YJJAudio::Play(this, EYJJSound::SlimeHit, GetActorLocation(), 0.9f, FMath::FRandRange(0.9f, 1.15f));
+	KnockVelocity = Away.GetSafeNormal() * FYJJData::Tune(TEXT("Mob.Knockback"));
+	YJJAudio::Play(this, EYJJSound::SlimeHit, GetActorLocation(), FYJJData::Tune(TEXT("Mob.HitVolume")), FMath::FRandRange(HitPitchMin, HitPitchMax));
 	if (Health <= 0)
 	{
 		Die();
@@ -149,19 +142,20 @@ void AYJJSlime::Die()
 	}
 	YJJAudio::Play(this, EYJJSound::SlimePop, GetActorLocation());
 
-	// 별가루 두세 개를 튕겨 낸다
-	const int32 Count = 2 + (GetUniqueID() % 2);
+	// 별가루 몇 개를 튕겨 낸다
+	const int32 MinDrops = FMath::RoundToInt(FYJJData::Tune(TEXT("Mob.DropsMin")));
+	const int32 Count = MinDrops + (GetUniqueID() % (FMath::RoundToInt(FYJJData::Tune(TEXT("Mob.DropsMax"))) - MinDrops + 1));
+	const FTransform Spawn(GetActorLocation() + FVector(0, 0, FYJJData::Tune(TEXT("Mob.DropHeight"))));
 	for (int32 i = 0; i < Count; ++i)
 	{
-		FActorSpawnParameters Params;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		AYJJStardust* Dust = GetWorld()->SpawnActorDeferred<AYJJStardust>(AYJJStardust::StaticClass(), FTransform(GetActorLocation() + FVector(0, 0, 80)));
+		AYJJStardust* Dust = GetWorld()->SpawnActorDeferred<AYJJStardust>(AYJJStardust::StaticClass(), Spawn);
 		if (Dust)
 		{
 			Dust->bCountsTowardTotal = false;
 			const float A = (i / static_cast<float>(Count)) * TWO_PI + FMath::FRand();
-			Dust->PopVelocity = FVector(FMath::Cos(A) * 300.f, FMath::Sin(A) * 300.f, 900.f);
-			Dust->FinishSpawning(FTransform(GetActorLocation() + FVector(0, 0, 80)));
+			const float Side = FYJJData::Tune(TEXT("Mob.DropSide"));
+			Dust->PopVelocity = FVector(FMath::Cos(A) * Side, FMath::Sin(A) * Side, FYJJData::Tune(TEXT("Mob.DropUp")));
+			Dust->FinishSpawning(Spawn);
 		}
 	}
 }
@@ -175,15 +169,15 @@ void AYJJSlime::Tick(float DeltaTime)
 	{
 		// 말랑하게 터지는 연기
 		DeathTime += DeltaTime;
-		const float A = DeathTime / 0.6f;
+		const float A = DeathTime / PuffTime;
 		for (int32 i = 0; i < Puffs.Num(); ++i)
 		{
-			const float Ang = i * 2.399963f;
-			const FVector Dir(FMath::Cos(Ang), FMath::Sin(Ang), 0.4f + YJJShapes::Hash(i) * 0.8f);
-			Puffs[i]->SetRelativeLocation(FVector(0, 0, 60) + Dir * 220.f * FMath::Sqrt(A));
-			Puffs[i]->SetRelativeScale3D(FVector(0.8f * (1.f - A) + 0.1f));
+			const float Ang = i * GoldenAngle;
+			const FVector Dir(FMath::Cos(Ang), FMath::Sin(Ang), PuffRiseMin + YJJShapes::Hash(i) * PuffRiseRange);
+			Puffs[i]->SetRelativeLocation(FVector(0, 0, PuffCenterHeight) + Dir * PuffSpread * FMath::Sqrt(A));
+			Puffs[i]->SetRelativeScale3D(FVector(PuffStartScale * (1.f - A) + PuffEndScale));
 		}
-		PuffMID->SetScalarParameterValue(TEXT("Intensity"), FMath::Max(0.f, 2.5f * (1.f - A)));
+		PuffMID->SetScalarParameterValue(TEXT("Intensity"), FMath::Max(0.f, PuffGlow * (1.f - A)));
 		if (A >= 1.f)
 		{
 			Destroy();
@@ -200,7 +194,8 @@ void AYJJSlime::Tick(float DeltaTime)
 	if (Hero && !Hero->IsDead())
 	{
 		const FVector HP = Hero->GetActorLocation();
-		if (FVector::Dist2D(HP, P) < FYJJData::Tune(TEXT("Mob.SightRange")) && FMath::Abs(HP.Z - P.Z) < 500.f && FVector::Dist2D(HP, Home) < HomeRadius + 400.f)
+		if (FVector::Dist2D(HP, P) < FYJJData::Tune(TEXT("Mob.SightRange")) && FMath::Abs(HP.Z - P.Z) < FYJJData::Tune(TEXT("Mob.SightHeight"))
+			&& FVector::Dist2D(HP, Home) < HomeRadius + FYJJData::Tune(TEXT("Mob.Leash")))
 		{
 			bChasing = true;
 			Target = HP;
@@ -209,35 +204,36 @@ void AYJJSlime::Tick(float DeltaTime)
 	if (!bChasing)
 	{
 		WanderTimer -= DeltaTime;
-		if (WanderTimer <= 0.f || FVector::Dist2D(P, Target) < 60.f)
+		if (WanderTimer <= 0.f || FVector::Dist2D(P, Target) < FYJJData::Tune(TEXT("Mob.WanderArrive")))
 		{
 			const float A = FMath::FRand() * TWO_PI;
 			const float R = FMath::Sqrt(FMath::FRand()) * HomeRadius;
 			Target = Home + FVector(FMath::Cos(A) * R, FMath::Sin(A) * R, 0);
-			WanderTimer = 2.f + FMath::FRand() * 3.f;
+			WanderTimer = FYJJData::Tune(TEXT("Mob.WanderPauseMin")) + FMath::FRand() * FYJJData::Tune(TEXT("Mob.WanderPauseRange"));
 		}
 	}
 
 	// 통통 뛰는 동안에만 움직인다
-	HopTime += DeltaTime * (bChasing ? 1.4f : 1.f);
-	const float Hop = FMath::Fmod(HopTime, FYJJData::Tune(TEXT("Mob.HopPeriod"))) / FYJJData::Tune(TEXT("Mob.HopPeriod"));
-	const bool bAirborne = Hop < 0.6f;
-	const float Air = bAirborne ? FMath::Sin(Hop / 0.6f * PI) : 0.f;
+	const float HopPeriod = FYJJData::Tune(TEXT("Mob.HopPeriod"));
+	HopTime += DeltaTime * (bChasing ? FYJJData::Tune(TEXT("Mob.ChaseHopRate")) : 1.f);
+	const float Hop = FMath::Fmod(HopTime, HopPeriod) / HopPeriod;
+	const bool bAirborne = Hop < AirFraction;
+	const float Air = bAirborne ? FMath::Sin(Hop / AirFraction * PI) : 0.f;
 
 	FVector Move = FVector::ZeroVector;
 	FVector ToTarget = Target - P;
 	ToTarget.Z = 0.f;
-	if (bAirborne && ToTarget.SizeSquared() > 100.f)
+	if (bAirborne && ToTarget.SizeSquared() > FMath::Square(ArriveDistance))
 	{
 		Move = ToTarget.GetSafeNormal() * (bChasing ? FYJJData::Tune(TEXT("Mob.ChaseSpeed")) : FYJJData::Tune(TEXT("Mob.WanderSpeed"))) * DeltaTime;
 	}
 	Move += KnockVelocity * DeltaTime;
-	KnockVelocity = FMath::VInterpTo(KnockVelocity, FVector::ZeroVector, DeltaTime, 5.f);
+	KnockVelocity = FMath::VInterpTo(KnockVelocity, FVector::ZeroVector, DeltaTime, FYJJData::Tune(TEXT("Mob.KnockbackDecay")));
 
 	// 절벽으로는 안 간다
 	FVector Next = P + Move;
 	float NextGround = GroundZ;
-	if (FindGround(Next, NextGround) && FMath::Abs(NextGround - GroundZ) < 120.f)
+	if (FindGround(Next, NextGround) && FMath::Abs(NextGround - GroundZ) < FYJJData::Tune(TEXT("Mob.MaxStep")))
 	{
 		GroundZ = NextGround;
 	}
@@ -250,25 +246,27 @@ void AYJJSlime::Tick(float DeltaTime)
 	SetActorLocation(FVector(Next.X, Next.Y, GroundZ));
 	if (!Move.IsNearlyZero())
 	{
-		SetActorRotation(FMath::RInterpTo(GetActorRotation(), FRotator(0, Move.Rotation().Yaw, 0), DeltaTime, 8.f));
+		SetActorRotation(FMath::RInterpTo(GetActorRotation(), FRotator(0, Move.Rotation().Yaw, 0), DeltaTime, TurnSpeed));
 	}
 
 	// 말랑한 움직임: 뜰 때 길쭉, 착지할 때 납작
-	const float Land = bAirborne ? 0.f : FMath::Sin((Hop - 0.6f) / 0.4f * PI);
-	const float Breath = 0.03f * FMath::Sin(Time * 5.f);
-	BodyPivot->SetRelativeLocation(FVector(0, 0, Air * 90.f * Size));
-	BodyPivot->SetRelativeScale3D(FVector(1.f - Air * 0.12f + Land * 0.25f + Breath, 1.f - Air * 0.12f + Land * 0.25f + Breath, 1.f + Air * 0.22f - Land * 0.3f - Breath));
-	Shadow->SetRelativeScale3D(FVector(1.2f * Size * (1.f - Air * 0.3f), 1.2f * Size * (1.f - Air * 0.3f), 0.02f));
+	const float Land = bAirborne ? 0.f : FMath::Sin((Hop - AirFraction) / (1.f - AirFraction) * PI);
+	const float Breath = BreathAmount * FMath::Sin(Time * BreathSpeed);
+	const float Wide = 1.f - Air * AirThin + Land * LandWiden + Breath;
+	BodyPivot->SetRelativeLocation(FVector(0, 0, Air * HopHeight * Size));
+	BodyPivot->SetRelativeScale3D(FVector(Wide, Wide, 1.f + Air * AirStretch - Land * LandSquash - Breath));
+	const float ShadowScale = ShadowSize / YJJShapes::BaseShapeSize * Size * (1.f - Air * ShadowShrink);
+	Shadow->SetRelativeScale3D(FVector(ShadowScale, ShadowScale, ShadowFlat));
 
-	Flash = FMath::FInterpTo(Flash, 0.f, DeltaTime, 8.f);
-	BodyMID->SetScalarParameterValue(TEXT("Emissive"), 0.35f + Flash * 4.f + (bChasing ? 0.15f : 0.f));
+	Flash = FMath::FInterpTo(Flash, 0.f, DeltaTime, FlashDecay);
+	BodyMID->SetScalarParameterValue(TEXT("Emissive"), BodyEmissive + Flash * FlashGlow + (bChasing ? ChaseGlow : 0.f));
 
 	// 영웅과 부딪히면 다치게 한다
 	if (Hero && !Hero->IsDead())
 	{
-		const FVector BodyP = GetActorLocation() + FVector(0, 0, 55 * Size + Air * 90.f * Size);
+		const FVector BodyP = GetActorLocation() + FVector(0, 0, (BodyCenterHeight + Air * HopHeight) * Size);
 		const FVector HeroP = Hero->GetActorLocation();
-		if (FVector::Dist2D(BodyP, HeroP) < GetRadius() + 40.f && FMath::Abs(BodyP.Z - HeroP.Z) < 130.f)
+		if (FVector::Dist2D(BodyP, HeroP) < GetRadius() + FYJJData::Tune(TEXT("Mob.ContactReach")) && FMath::Abs(BodyP.Z - HeroP.Z) < FYJJData::Tune(TEXT("Mob.ContactHeight")))
 		{
 			Hero->TakeHit(GetActorLocation());
 		}

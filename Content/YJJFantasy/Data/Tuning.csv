@@ -79,6 +79,34 @@ Adventure.ToastStamina,3.5,
 Adventure.ToastChest,3.5,
 Adventure.StardustPerStaminaStep,15,별가루 이만큼마다
 Adventure.StaminaStep,20,기력 상한 증가
+Stardust.PopGravity,2400,떨군 별가루가 떨어지는 중력
+Stardust.SettleHeight,70,땅 위 떠 있는 높이
+Stardust.MagnetSpeed,2200,빨려 가는 최고 속도
+Stardust.MagnetAccel,8,
+Chest.SoundVolume,0.6,여는 소리
+Chest.SoundPitch,1.3,
+Chest.PopSide,260,튀어나오는 별가루 수평 속도
+Chest.PopUp,1100,위로 속도
+Chest.PopUpStep,60,한 개마다 더하는 위 속도
+Lantern.RespawnForward,300,켠 등불 앞 부활 지점
+Lantern.RespawnUp,120,
+Mob.Knockback,900,맞고 밀려나는 속도
+Mob.KnockbackDecay,5,
+Mob.HitVolume,0.9,
+Mob.DropsMin,2,처치 시 별가루 수
+Mob.DropsMax,3,
+Mob.DropHeight,80,
+Mob.DropSide,300,
+Mob.DropUp,900,
+Mob.SightHeight,500,알아채는 높이 차
+Mob.Leash,400,집에서 이만큼 더 벗어나면 안 쫓는다
+Mob.WanderArrive,60,
+Mob.WanderPauseMin,2,다음 목적지까지 초
+Mob.WanderPauseRange,3,
+Mob.ChaseHopRate,1.4,쫓을 때 더 빨리 튄다
+Mob.MaxStep,120,이보다 높은 턱은 안 넘는다 (절벽 방지)
+Mob.ContactReach,40,부딪힘 판정 여유
+Mob.ContactHeight,130,
 Audio.FullVolumeDistance,800,이 거리까지는 원래 크기
 Audio.FadeDistance,5000,그 뒤로 이만큼 가면 0
 Audio.MusicVolume,0.5,

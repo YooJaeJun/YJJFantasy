@@ -48,6 +48,15 @@ ToastLantern,1|0.85|0.45,알림 색
 ToastAllLanterns,0.6|0.95|1,
 ToastStamina,0.7|0.9|1,
 ToastChest,1|0.8|0.4,
+StardustGold,1|0.82|0.4,별가루
+StardustCore,1|0.95|0.8,
+ChestWood,0.72|0.45|0.25,보물 상자
+ChestWoodSide,0.55|0.32|0.18,
+ChestGold,1|0.78|0.3,
+ChestGlow,1|0.85|0.45,
+ChestLight,1|0.8|0.45,
+LanternUnlit,0.4|0.5|0.7,꺼진 등불 빛
+MobShadow,0.05|0.08|0.06,떡무지 발밑 그림자
 FlowerDefault1,1|0.85|0.3,꾸미기 기본 꽃
 FlowerDefault2,1|0.55|0.7,
 FlowerDefault3,1|1|0.95,
