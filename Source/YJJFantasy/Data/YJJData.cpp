@@ -31,7 +31,7 @@ UDataTable* FYJJData::LoadTable(const TCHAR* File, UScriptStruct* RowStruct)
 
 void FYJJData::Load(FStore& S)
 {
-	for (UDataTable* Old : { S.Tuning, S.Colors, S.Islands, S.Placements, S.Vista, S.Tour })
+	for (UDataTable* Old : { S.Tuning, S.Colors, S.Islands, S.Placements, S.Vista, S.Tour, S.TestPoints })
 	{
 		if (Old)
 		{
@@ -44,6 +44,7 @@ void FYJJData::Load(FStore& S)
 	S.Placements = LoadTable(TEXT("Placements.csv"), FYJJPlacementRow::StaticStruct());
 	S.Vista = LoadTable(TEXT("VistaIslands.csv"), FYJJVistaIslandRow::StaticStruct());
 	S.Tour = LoadTable(TEXT("Tour.csv"), FYJJTourRow::StaticStruct());
+	S.TestPoints = LoadTable(TEXT("TestPoints.csv"), FYJJTourRow::StaticStruct());
 	S.Missing.Reset();
 }
 
@@ -157,6 +158,26 @@ TArray<TPair<FName, const FYJJTourRow*>> FYJJData::Tour()
 	TArray<TPair<FName, const FYJJTourRow*>> Out;
 	Store().Tour->ForeachRow<FYJJTourRow>(TEXT("FYJJData"), [&Out](const FName& Key, const FYJJTourRow& Row) { Out.Emplace(Key, &Row); });
 	return Out;
+}
+
+const FYJJTourRow* FYJJData::TestPoint(const FName& Name)
+{
+	const FYJJTourRow* Row = Store().TestPoints->FindRow<FYJJTourRow>(Name, TEXT("FYJJData"), false);
+	if (!Row)
+	{
+		UE_LOG(LogYJJFantasy, Error, TEXT("[Data] TestPoints.csv 에 %s 줄이 없다"), *Name.ToString());
+	}
+	return Row;
+}
+
+int32 FYJJData::CountPlacements(const FString& Type)
+{
+	int32 Count = 0;
+	for (const FYJJPlacementRow* Row : Placements())
+	{
+		Count += Row->Type == Type ? 1 : 0;
+	}
+	return Count;
 }
 
 void FYJJData::Reload()

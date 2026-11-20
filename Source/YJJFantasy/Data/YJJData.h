@@ -15,6 +15,7 @@
  *   Placements.csv     섬 위에 놓는 모든 것: 나무·바위·등불·상자·몬스터·이동 장치·별가루·지형 조각
  *   VistaIslands.csv   닿을 수 없는 먼 섬
  *   Tour.csv           투어 스크린샷 지점
+ *   TestPoints.csv     자동 플레이 검증 지점
  *
  * 글자는 Localization.csv (FYJJLoc).
  */
@@ -172,6 +173,10 @@ public:
 	static TArray<const FYJJPlacementRow*> Placements();
 	static TArray<const FYJJVistaIslandRow*> VistaIslands();
 	static TArray<TPair<FName, const FYJJTourRow*>> Tour();
+	/** TestPoints.csv (자동 플레이 검증 지점, 열은 Tour.csv 와 같다) */
+	static const FYJJTourRow* TestPoint(const FName& Name);
+	/** Placements.csv 에서 이 종류 줄 수 (Lantern, Chest, Mob ...) */
+	static int32 CountPlacements(const FString& Type);
 
 	/** CSV를 다시 읽는다 (콘솔 yjj.ReloadData) */
 	static void Reload();
@@ -188,6 +193,7 @@ private:
 		UDataTable* Placements = nullptr;
 		UDataTable* Vista = nullptr;
 		UDataTable* Tour = nullptr;
+		UDataTable* TestPoints = nullptr;
 		TSet<FString> Missing;
 	};
 

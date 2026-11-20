@@ -41,6 +41,56 @@ private:
 	void Add(float Wait, TFunction<void()> Action) { Steps.Add({ Wait, MoveTemp(Action) }); }
 	void Shot(const FString& Name);
 	void View(const FVector& HeroLocation, float Yaw, float Pitch);
+	/** Content/YJJFantasy/Data/TestPoints.csv 의 지점으로 */
+	void ViewPoint(const TCHAR* Name);
+	void TrackHeight();
+	/** Tuning.csv 의 Test.<Name> (합격 기준) */
+	static float Test(const TCHAR* Name);
+
+	/** 단계 사이 기다리는 시간(초)과 반복 횟수 */
+	struct FPace
+	{
+		float TourStart;
+		float Boot;
+		float Teleport;
+		float LightSettle;
+		float Shot;
+		float Check;
+		float Short;
+		float Land;
+		int32 JumpSamples;
+		float JumpSample;
+		int32 UpdraftSamples;
+		int32 GlideSteps;
+		float FlightSample;
+		float GlideLand;
+		int32 BounceSamples;
+		float BounceSample;
+		int32 Swings;
+		float Swing;
+		float AfterCombat;
+		float Interact;
+		float ChestOpen;
+		float LanternInteract;
+		float LanternGlow;
+		float FinaleBeam;
+		float FinaleSky;
+		float FinaleEnd;
+		float Fall;
+		float Respawn;
+		float CombatLookDown;
+		float ChestLookDown;
+		float LanternLookDown;
+		/** 평균 FPS 에서 뺄 처음 단계 수 (셰이더 컴파일 구간) */
+		int32 SkipFirstSteps;
+		float MinFrameTime;
+	};
+	inline static const FPace Pace = {
+		3.f, 4.f, 0.1f, 2.5f, 0.6f, 0.5f, 0.2f, 0.6f,
+		12, 0.05f, 8, 12, 0.5f, 2.f, 10, 0.15f, 8, 0.4f, 0.8f,
+		1.5f, 1.2f, 1.8f, 2.f, 4.f, 9.f, 8.f, 2.5f, 3.5f,
+		15.f, 10.f, 5.f, 2, 0.001f,
+	};
 	void Check(bool bOk, const FString& What);
 	class AYJJHero* Hero() const;
 

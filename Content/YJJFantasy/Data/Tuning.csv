@@ -143,6 +143,17 @@ Hero.AttackCone,0.1,앞쪽 판정 (내적)
 Hero.AttackHeight,200,판정 높이 차
 Hero.CameraShake,10,흔들림 세기
 Hero.CameraShakeDecay,4,
+Test.MinStardust,50,자동 플레이: 별가루가 이만큼은 배치돼 있어야
+Test.JumpMinHeight,180,고목 나선 발판(한 단 165)을 오를 점프 높이
+Test.UpdraftMinLift,1500,상승 기류에서 이만큼은 떠올라야
+Test.GlideArriveAbove,2500,폭포 정원 도착 판정 높이
+Test.GlideArriveRadius,3000,폭포 정원 도착 판정 거리
+Test.BounceMinRise,300,버섯이 이만큼은 튕겨야
+Test.CombatStandOff,180,떡무지 앞에 서는 거리
+Test.ChestStandOff,170,
+Test.LanternStandOff,140,
+Test.StandLift,110,서는 지점 높이 (캡슐 반 높이쯤)
+Test.RespawnAbove,1000,부활 뒤 섬 기준 높이에서 이만큼 위여야
 Audio.FullVolumeDistance,800,이 거리까지는 원래 크기
 Audio.FadeDistance,5000,그 뒤로 이만큼 가면 0
 Audio.MusicVolume,0.5,

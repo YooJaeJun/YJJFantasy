@@ -26,14 +26,19 @@ powershell -File Tools/Content/BuildContent.ps1
 | 파일 | 내용 |
 | --- | --- |
 | `Localization.csv` | 화면 글자 (Key, ko, en, Note). 언어는 명령줄 `-yjjlang=en` |
-| `Tuning.csv` | 이동·기력·공격·체력·카메라·떡무지·별가루·소리 수치 (`FYJJData::Tune`) |
-| `Colors.csv` | 색상표, 선형 색 `R\|G\|B` (`FYJJData::Color`) |
+| `Tuning.csv` | 조절할 만한 값: 이동·기력·공격·체력·카메라·떡무지·별가루·상자·이동 장치·엔딩 연출·소리·자동 테스트 합격 기준(`Test.*`) (`FYJJData::Tune`) |
+| `Colors.csv` | 색상표, 선형 색 `R\|G\|B` 또는 `R\|G\|B\|A` (`FYJJData::Color`) |
 | `Islands.csv` | 섬 위치·크기·잔디/바위 색·꽃·구역 이름 키 |
 | `Placements.csv` | 섬 위 모든 것. `Type`별로 쓰는 열이 다르다 (Note 열 참고). `Island=World`면 섬 좌표 그대로, `Ground=1`이면 땅 위로. `Terrain`은 풀보다 먼저, `Shape`는 나중 |
 | `VistaIslands.csv` | 닿을 수 없는 먼 섬 |
 | `Tour.csv` | 투어 스크린샷 지점 |
+| `TestPoints.csv` | 자동 플레이 검증 지점 (기대 개수는 `Placements.csv`에서 센다) |
 
-코드 쪽 창구: `Source/YJJFantasy/Data/YJJData.h` (`FYJJData`), `YJJLoc.h` (`FYJJLoc`). 먼 풍경 생성 상수는 `World/YJJWorldLayout.h`.
+코드 쪽 창구: `Source/YJJFantasy/Data/YJJData.h` (`FYJJData`), `YJJLoc.h` (`FYJJLoc`).
+
+디자인이 고정된 모양 값은 데이터 대신 헤더의 이름 붙은 상수다 (.cpp 에는 맨 숫자를 두지 않는다):
+`World/YJJPrefabShapes.h` (섬·나무·바위 등 소품 모양), `World/YJJWorldLayout.h` (먼 풍경), `UI/YJJHudLayout.h` (HUD 배치·타이밍),
+각 액터 헤더의 `private` 상수 (등불·성소·상자·떡무지·이동 장치·주인공 검/날개/애니메이션 등).
 
 ## 실행·테스트
 

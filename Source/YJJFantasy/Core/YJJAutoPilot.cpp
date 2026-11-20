@@ -19,6 +19,7 @@
 #include "UnrealClient.h"
 #include "World/YJJEnvironment.h"
 #include "World/YJJWorldBuilder.h"
+#include "World/YJJWorldLayout.h"
 #include "YJJFantasy.h"
 
 FAutoConsoleCommandWithWorld UYJJAutoPilot::TourCommand(TEXT("yjj.Tour"), TEXT("명소 스크린샷 투어"), FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
@@ -118,16 +119,16 @@ void UYJJAutoPilot::StartTour()
 	StepIndex = -1;
 	StepTimer = 0.f;
 
-	Add(3.f, [] {});
+	Add(Pace.TourStart, [] {});
 	for (const TPair<FName, const FYJJTourRow*>& Spot : FYJJData::Tour())
 	{
 		const FString Name = Spot.Key.ToString();
 		const FVector P = AYJJWorldBuilder::W(Spot.Value->X, Spot.Value->Y, Spot.Value->Z);
 		const float Yaw = Spot.Value->Yaw;
 		const float Pitch = Spot.Value->Pitch;
-		Add(0.1f, [this, P, Yaw, Pitch] { View(P, Yaw, Pitch); });
+		Add(Pace.Teleport, [this, P, Yaw, Pitch] { View(P, Yaw, Pitch); });
 		// 텔레포트 후 Lumen·그림자가 자리 잡을 때까지 기다린다
-		Add(2.5f, [this] {
+		Add(Pace.LightSettle, [this] {
 			if (AYJJHero* H = Hero())
 			{
 				// 공중 샷은 떨어지지 않게 활공
@@ -137,9 +138,30 @@ void UYJJAutoPilot::StartTour()
 				}
 			}
 		});
-		Add(0.6f, [this, Name] { Shot(Name); });
+		Add(Pace.Shot, [this, Name] { Shot(Name); });
 	}
 	UE_LOG(LogYJJFantasy, Display, TEXT("[AutoPilot] tour start (%d steps)"), Steps.Num());
+}
+
+void UYJJAutoPilot::ViewPoint(const TCHAR* Name)
+{
+	if (const FYJJTourRow* Row = FYJJData::TestPoint(FName(Name)))
+	{
+		View(AYJJWorldBuilder::W(Row->X, Row->Y, Row->Z), Row->Yaw, Row->Pitch);
+	}
+}
+
+void UYJJAutoPilot::TrackHeight()
+{
+	if (AYJJHero* H = Hero())
+	{
+		TrackMaxZ = FMath::Max(TrackMaxZ, H->GetActorLocation().Z);
+	}
+}
+
+float UYJJAutoPilot::Test(const TCHAR* Name)
+{
+	return FYJJData::Tune(*FString::Printf(TEXT("Test.%s"), Name));
 }
 
 void UYJJAutoPilot::StartAutoPlay()
@@ -148,13 +170,17 @@ void UYJJAutoPilot::StartAutoPlay()
 	StepIndex = -1;
 	StepTimer = 0.f;
 	Passed = Failed = 0;
+	// 기대 개수는 Placements.csv 에서 센다 (배치를 바꾸면 테스트도 따라간다)
+	const int32 LanternCount = FYJJData::CountPlacements(TEXT("Lantern"));
+	const int32 ChestCount = FYJJData::CountPlacements(TEXT("Chest"));
+	const int32 MobCount = FYJJData::CountPlacements(TEXT("Mob"));
 
-	Add(4.f, [] {});
-	Add(0.5f, [this] {
+	Add(Pace.Boot, [] {});
+	Add(Pace.Check, [this, LanternCount] {
 		Check(Hero() != nullptr, TEXT("hero spawned"));
 		const UYJJAdventureSubsystem* Adv = UYJJAdventureSubsystem::Get(GetWorld());
-		Check(Adv && Adv->GetLanternCount() == 5, FString::Printf(TEXT("5 lanterns registered (%d)"), Adv ? Adv->GetLanternCount() : -1));
-		Check(Adv && Adv->GetStardustTotal() >= 50, FString::Printf(TEXT("stardust placed (%d)"), Adv ? Adv->GetStardustTotal() : -1));
+		Check(Adv && Adv->GetLanternCount() == LanternCount, FString::Printf(TEXT("%d lanterns registered (%d)"), LanternCount, Adv ? Adv->GetLanternCount() : INDEX_NONE));
+		Check(Adv && Adv->GetStardustTotal() >= Test(TEXT("MinStardust")), FString::Printf(TEXT("stardust placed (%d)"), Adv ? Adv->GetStardustTotal() : INDEX_NONE));
 		if (AYJJHero* H = Hero())
 		{
 			Check(!H->GetCharacterMovement()->IsFalling(), FString::Printf(TEXT("hero standing on hub (z=%.0f)"), H->GetActorLocation().Z - AYJJWorldBuilder::BaseZ));
@@ -162,11 +188,9 @@ void UYJJAutoPilot::StartAutoPlay()
 		Shot(TEXT("Play_0_Start"));
 	});
 
-	// 점프 높이: 고목 나선 발판(한 단 165)을 오를 수 있어야 한다
-	Add(0.3f, [this] {
-		View(AYJJWorldBuilder::W(-1600, -1200, 120), 45.f, -10.f);
-	});
-	Add(0.6f, [this] {
+	// 점프 높이: 고목 나선 발판을 오를 수 있어야 한다
+	Add(Pace.Short, [this] { ViewPoint(TEXT("JumpSpot")); });
+	Add(Pace.Land, [this] {
 		if (AYJJHero* H = Hero())
 		{
 			TrackStartZ = H->GetActorLocation().Z;
@@ -174,15 +198,18 @@ void UYJJAutoPilot::StartAutoPlay()
 			H->Jump();
 		}
 	});
-	for (int32 i = 0; i < 12; ++i)
+	for (int32 i = 0; i < Pace.JumpSamples; ++i)
 	{
-		Add(0.05f, [this] { if (AYJJHero* H = Hero()) { TrackMaxZ = FMath::Max(TrackMaxZ, H->GetActorLocation().Z); } });
+		Add(Pace.JumpSample, [this] { TrackHeight(); });
 	}
-	Add(0.5f, [this] { Check(TrackMaxZ - TrackStartZ > 180.f, FString::Printf(TEXT("jump height %.0f (need > 180)"), TrackMaxZ - TrackStartZ)); });
+	Add(Pace.Check, [this] {
+		const float Need = Test(TEXT("JumpMinHeight"));
+		Check(TrackMaxZ - TrackStartZ > Need, FString::Printf(TEXT("jump height %.0f (need > %.0f)"), TrackMaxZ - TrackStartZ, Need));
+	});
 
 	// 활공 + 상승 기류: 중앙섬 서쪽 기류 위에서 활공하면 높이 올라가야 한다
-	Add(0.2f, [this] {
-		View(AYJJWorldBuilder::W(-2350, -500, 400), 180.f, -10.f);
+	Add(Pace.Short, [this] {
+		ViewPoint(TEXT("UpdraftSpot"));
 		if (AYJJHero* H = Hero())
 		{
 			TrackStartZ = H->GetActorLocation().Z;
@@ -190,80 +217,81 @@ void UYJJAutoPilot::StartAutoPlay()
 			H->GetCharacterMovement()->SetMovementMode(MOVE_Falling);
 		}
 	});
-	Add(0.3f, [this] { if (AYJJHero* H = Hero()) { H->SetGliding(true); } });
-	for (int32 i = 0; i < 8; ++i)
+	Add(Pace.Short, [this] { if (AYJJHero* H = Hero()) { H->SetGliding(true); } });
+	for (int32 i = 0; i < Pace.UpdraftSamples; ++i)
 	{
-		Add(0.5f, [this] { if (AYJJHero* H = Hero()) { TrackMaxZ = FMath::Max(TrackMaxZ, H->GetActorLocation().Z); } });
+		Add(Pace.FlightSample, [this] { TrackHeight(); });
 	}
-	Add(0.1f, [this] {
-		Check(TrackMaxZ - TrackStartZ > 1500.f, FString::Printf(TEXT("updraft lifts glider (+%.0f)"), TrackMaxZ - TrackStartZ));
+	Add(Pace.Teleport, [this] {
+		Check(TrackMaxZ - TrackStartZ > Test(TEXT("UpdraftMinLift")), FString::Printf(TEXT("updraft lifts glider (+%.0f)"), TrackMaxZ - TrackStartZ));
 		Shot(TEXT("Play_1_Updraft"));
 	});
 
 	// 활공 거리: 기류 꼭대기에서 폭포 정원까지 날아갈 수 있는지
-	Add(0.1f, [this] {
-		View(AYJJWorldBuilder::W(-2350, -500, 3600), 190.f, -10.f);
+	const FYJJIslandRow* Garden = FYJJData::Island(FName(TEXT("Waterfall")));
+	const FVector GardenCenter = Garden ? AYJJWorldBuilder::W(Garden->X, Garden->Y, Garden->Z) : FVector::ZeroVector;
+	Add(Pace.Teleport, [this] {
+		ViewPoint(TEXT("GlideStart"));
 		if (AYJJHero* H = Hero())
 		{
 			H->GetCharacterMovement()->SetMovementMode(MOVE_Falling);
 		}
 	});
-	Add(0.1f, [this] { if (AYJJHero* H = Hero()) { H->SetGliding(true); } });
-	for (int32 i = 0; i < 12; ++i)
+	Add(Pace.Teleport, [this] { if (AYJJHero* H = Hero()) { H->SetGliding(true); } });
+	for (int32 i = 0; i < Pace.GlideSteps; ++i)
 	{
-		Add(0.5f, [this] {
+		Add(Pace.FlightSample, [this, GardenCenter] {
 			if (AYJJHero* H = Hero())
 			{
 				// 폭포 정원 쪽으로 방향 유지
-				const FVector To = (AYJJWorldBuilder::W(-7700, -1900, 2800) - H->GetActorLocation()).GetSafeNormal2D();
+				const FVector To = (GardenCenter - H->GetActorLocation()).GetSafeNormal2D();
 				H->SetActorRotation(To.Rotation());
 				H->AddMovementInput(To, 1.f);
 			}
 		});
 	}
-	Add(2.f, [this] {
+	Add(Pace.GlideLand, [this, GardenCenter] {
 		if (AYJJHero* H = Hero())
 		{
-			const float Dist = FVector::Dist2D(H->GetActorLocation(), AYJJWorldBuilder::W(-7700, -1900, 0));
-			Check(H->GetActorLocation().Z > AYJJWorldBuilder::BaseZ + 2500.f && Dist < 3000.f, FString::Printf(TEXT("glide reaches waterfall garden (dist %.0f z=%.0f)"), Dist, H->GetActorLocation().Z - AYJJWorldBuilder::BaseZ));
+			const float Dist = FVector::Dist2D(H->GetActorLocation(), GardenCenter);
+			const float Above = H->GetActorLocation().Z - AYJJWorldBuilder::BaseZ;
+			Check(Above > Test(TEXT("GlideArriveAbove")) && Dist < Test(TEXT("GlideArriveRadius")), FString::Printf(TEXT("glide reaches waterfall garden (dist %.0f z=%.0f)"), Dist, Above));
 		}
 		Shot(TEXT("Play_2_GlideLanding"));
 	});
 
 	// 버섯: 밟으면 높이 튀어야 한다
-	Add(0.1f, [this] {
-		View(AYJJWorldBuilder::W(-700, 2250, 700), 90.f, -20.f);
+	Add(Pace.Teleport, [this] {
+		ViewPoint(TEXT("MushroomSpot"));
 		if (AYJJHero* H = Hero())
 		{
 			TrackStartZ = H->GetActorLocation().Z;
-			TrackMaxZ = -1e9f;
+			TrackMaxZ = TNumericLimits<float>::Lowest();
 			H->GetCharacterMovement()->SetMovementMode(MOVE_Falling);
 		}
 	});
-	for (int32 i = 0; i < 10; ++i)
+	for (int32 i = 0; i < Pace.BounceSamples; ++i)
 	{
-		Add(0.15f, [this] { if (AYJJHero* H = Hero()) { TrackMaxZ = FMath::Max(TrackMaxZ, H->GetActorLocation().Z); } });
+		Add(Pace.BounceSample, [this] { TrackHeight(); });
 	}
-	Add(0.1f, [this] { Check(TrackMaxZ > TrackStartZ + 300.f, FString::Printf(TEXT("mushroom bounces (+%.0f)"), TrackMaxZ - TrackStartZ)); });
+	Add(Pace.Teleport, [this] { Check(TrackMaxZ > TrackStartZ + Test(TEXT("BounceMinRise")), FString::Printf(TEXT("mushroom bounces (+%.0f)"), TrackMaxZ - TrackStartZ)); });
 
-	// 전투: 들꽃 언덕 슬라임 옆으로 가서 휘두르기
-	Add(0.1f, [this] {
+	// 전투: 첫 떡무지 옆으로 가서 휘두르기
+	Add(Pace.Teleport, [this] {
 		for (TActorIterator<AYJJSlime> It(GetWorld()); It; ++It)
 		{
-			const FVector P = It->GetActorLocation();
-			const FVector Dir = FVector(1, 0, 0);
-			View(P - Dir * 180.f + FVector(0, 0, 110), 0.f, -15.f);
+			View(It->GetActorLocation() - FVector::ForwardVector * Test(TEXT("CombatStandOff")) + FVector(0, 0, Test(TEXT("StandLift"))), 0.f, -Pace.CombatLookDown);
 			break;
 		}
 	});
-	for (int32 i = 0; i < 8; ++i)
+	for (int32 i = 0; i < Pace.Swings; ++i)
 	{
-		Add(0.4f, [this] {
+		Add(Pace.Swing, [this] {
 			if (AYJJHero* H = Hero())
 			{
-				// 가장 가까운 슬라임을 바라보고 공격
+				// 가장 가까운 떡무지를 바라보고 공격
 				AYJJSlime* Best = nullptr;
-				float BestD = 1e9f;
+				float BestD = TNumericLimits<float>::Max();
 				for (TActorIterator<AYJJSlime> It(GetWorld()); It; ++It)
 				{
 					const float D = FVector::Dist(It->GetActorLocation(), H->GetActorLocation());
@@ -281,105 +309,105 @@ void UYJJAutoPilot::StartAutoPlay()
 			}
 		});
 	}
-	Add(0.8f, [this] {
+	Add(Pace.AfterCombat, [this, MobCount] {
 		int32 Alive = 0;
 		for (TActorIterator<AYJJSlime> It(GetWorld()); It; ++It)
 		{
 			Alive++;
 		}
-		Check(Alive < 13, FString::Printf(TEXT("slime defeated (alive %d)"), Alive));
+		Check(Alive < MobCount, FString::Printf(TEXT("slime defeated (alive %d)"), Alive));
 		Shot(TEXT("Play_3_Combat"));
 	});
 
 	// 보물 상자: 각 상자 앞에서 열기
-	for (int32 i = 0; i < 6; ++i)
+	for (int32 i = 0; i < ChestCount; ++i)
 	{
-		Add(0.2f, [this, i] {
+		Add(Pace.Short, [this, i] {
 			int32 Index = 0;
 			for (TActorIterator<AYJJChest> It(GetWorld()); It; ++It)
 			{
 				if (Index++ == i)
 				{
-					View(It->GetActorLocation() + It->GetActorForwardVector() * 170.f + FVector(0, 0, 110), It->GetActorRotation().Yaw + 180.f, -10.f);
+					View(It->GetActorLocation() + It->GetActorForwardVector() * Test(TEXT("ChestStandOff")) + FVector(0, 0, Test(TEXT("StandLift"))), It->GetActorRotation().Yaw + YJJWorldLayout::HalfTurn, -Pace.ChestLookDown);
 					break;
 				}
 			}
 		});
-		Add(1.5f, [this, i] {
+		Add(Pace.Interact, [this, i] {
 			if (AYJJHero* H = Hero())
 			{
 				Check(!H->GetInteractPrompt().IsEmpty(), FString::Printf(TEXT("chest %d prompt '%s'"), i, *H->GetInteractPrompt()));
 				H->DoInteract();
 			}
 		});
-		Add(1.2f, [this, i] { if (i == 0) { Shot(TEXT("Play_3b_Chest")); } });
+		Add(Pace.ChestOpen, [this, i] { if (i == 0) { Shot(TEXT("Play_3b_Chest")); } });
 	}
-	Add(0.1f, [this] {
+	Add(Pace.Teleport, [this, ChestCount] {
 		const UYJJAdventureSubsystem* Adv = UYJJAdventureSubsystem::Get(GetWorld());
-		Check(Adv && Adv->GetChestsOpened() == Adv->GetChestTotal() && Adv->GetChestTotal() == 6, FString::Printf(TEXT("chests opened %d/%d"), Adv ? Adv->GetChestsOpened() : -1, Adv ? Adv->GetChestTotal() : -1));
+		Check(Adv && Adv->GetChestsOpened() == Adv->GetChestTotal() && Adv->GetChestTotal() == ChestCount, FString::Printf(TEXT("chests opened %d/%d"), Adv ? Adv->GetChestsOpened() : INDEX_NONE, Adv ? Adv->GetChestTotal() : INDEX_NONE));
 	});
 
 	// 등불: 각 등불 앞에서 상호작용
-	for (int32 i = 0; i < 5; ++i)
+	for (int32 i = 0; i < LanternCount; ++i)
 	{
-		Add(0.2f, [this, i] {
+		Add(Pace.Short, [this, i] {
 			int32 Index = 0;
 			for (TActorIterator<AYJJLantern> It(GetWorld()); It; ++It)
 			{
 				if (Index++ == i)
 				{
-					View(It->GetRespawnLocation() - It->GetActorForwardVector() * 140.f, (It->GetActorLocation() - It->GetRespawnLocation()).Rotation().Yaw, -5.f);
+					View(It->GetRespawnLocation() - It->GetActorForwardVector() * Test(TEXT("LanternStandOff")), (It->GetActorLocation() - It->GetRespawnLocation()).Rotation().Yaw, -Pace.LanternLookDown);
 					break;
 				}
 			}
 		});
-		Add(1.8f, [this, i] {
+		Add(Pace.LanternInteract, [this, i] {
 			if (AYJJHero* H = Hero())
 			{
 				Check(!H->GetInteractPrompt().IsEmpty(), FString::Printf(TEXT("lantern %d prompt '%s'"), i, *H->GetInteractPrompt()));
 				H->DoInteract();
 			}
 		});
-		Add(2.f, [this, i] { Shot(FString::Printf(TEXT("Play_4_Lantern%d"), i)); });
+		Add(Pace.LanternGlow, [this, i] { Shot(FString::Printf(TEXT("Play_4_Lantern%d"), i)); });
 	}
-	Add(0.5f, [this] {
+	Add(Pace.Check, [this, LanternCount] {
 		const UYJJAdventureSubsystem* Adv = UYJJAdventureSubsystem::Get(GetWorld());
-		Check(Adv && Adv->GetLanternsLit() == 5, FString::Printf(TEXT("all lanterns lit (%d)"), Adv ? Adv->GetLanternsLit() : -1));
+		Check(Adv && Adv->GetLanternsLit() == LanternCount, FString::Printf(TEXT("all lanterns lit (%d)"), Adv ? Adv->GetLanternsLit() : INDEX_NONE));
 	});
 
 	// 엔딩: 성소에서 상호작용
-	Add(0.2f, [this] { View(AYJJWorldBuilder::W(0, -420, 260), 90.f, 10.f); });
-	Add(1.5f, [this] {
+	Add(Pace.Short, [this] { ViewPoint(TEXT("ShrineSpot")); });
+	Add(Pace.Interact, [this] {
 		if (AYJJHero* H = Hero())
 		{
 			Check(!H->GetInteractPrompt().IsEmpty(), TEXT("shrine prompt"));
 			H->DoInteract();
 		}
 	});
-	Add(4.f, [this] { Shot(TEXT("Play_5_FinaleBeam")); });
-	Add(9.f, [this] { Shot(TEXT("Play_6_FinaleSky")); });
-	Add(8.f, [this] {
+	Add(Pace.FinaleBeam, [this] { Shot(TEXT("Play_5_FinaleBeam")); });
+	Add(Pace.FinaleSky, [this] { Shot(TEXT("Play_6_FinaleSky")); });
+	Add(Pace.FinaleEnd, [this] {
 		const UYJJAdventureSubsystem* Adv = UYJJAdventureSubsystem::Get(GetWorld());
 		Check(Adv && Adv->GetPhase() == EYJJPhase::Ended, TEXT("ending reached"));
 		Shot(TEXT("Play_7_Ending"));
 	});
 
 	// 낙사 -> 부활
-	Add(2.5f, [this] { View(AYJJWorldBuilder::W(0, 0, -4800), 0.f, 0.f); });
-	Add(3.5f, [this] {
+	Add(Pace.Fall, [this] { ViewPoint(TEXT("AbyssSpot")); });
+	Add(Pace.Respawn, [this] {
 		if (AYJJHero* H = Hero())
 		{
-			Check(H->GetActorLocation().Z > AYJJWorldBuilder::BaseZ - 1000.f, FString::Printf(TEXT("fall respawn (z=%.0f)"), H->GetActorLocation().Z - AYJJWorldBuilder::BaseZ));
+			Check(H->GetActorLocation().Z > AYJJWorldBuilder::BaseZ - Test(TEXT("RespawnAbove")), FString::Printf(TEXT("fall respawn (z=%.0f)"), H->GetActorLocation().Z - AYJJWorldBuilder::BaseZ));
 		}
 	});
-	Add(0.1f, [this] { UE_LOG(LogYJJFantasy, Display, TEXT("[AutoPilot] result passed=%d failed=%d avgfps=%.0f"), Passed, Failed, FrameCount / FMath::Max(FrameTime, 0.001f)); });
+	Add(Pace.Teleport, [this] { UE_LOG(LogYJJFantasy, Display, TEXT("[AutoPilot] result passed=%d failed=%d avgfps=%.0f"), Passed, Failed, FrameCount / FMath::Max(FrameTime, Pace.MinFrameTime)); });
 	UE_LOG(LogYJJFantasy, Display, TEXT("[AutoPilot] autoplay start (%d steps)"), Steps.Num());
 }
 
 void UYJJAutoPilot::Tick(float DeltaTime)
 {
 	// 평균 프레임 (처음 몇 초의 셰이더 컴파일 구간은 뺀다)
-	if (StepIndex > 2)
+	if (StepIndex > Pace.SkipFirstSteps)
 	{
 		FrameCount++;
 		FrameTime += DeltaTime;
